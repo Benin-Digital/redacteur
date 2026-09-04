@@ -1,0 +1,189 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement des données...</p>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (errorMessage && !isLoading) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+                <button class="btn-retry" (click)="refreshData()">Réessayer</button>
+            </div>
+            }
+
+            <!-- Data Display -->
+            @if (!isLoading && !errorMessage) {
+            <ng-container>
+
+                <!-- Welcome -->
+                <section class="welcome-banner animate-in">
+                    <div class="welcome-text">
+                        <p class="welcome-greeting">{{ greeting }}, <strong>{{ firstName }}</strong> 👋</p>
+                        <p class="welcome-sub">Voici un aperçu de votre plateforme aujourd'hui.</p>
+                    </div>
+                    <div class="welcome-actions">
+                        <a routerLink="/admin/utilisateurs" class="btn-primary-sm">
+                            <i class="bi bi-person-plus-fill"></i> Ajouter un manager
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Stats -->
+                <section class="stats-grid">
+                    @for (stat of stats; track stat.label; let i = $index) {
+                    <div class="stat-card animate-in" [style.--delay]="(i * 0.07) + 's'" [class]="'stat-' + stat.color">
+                        <div class="stat-icon">
+                            <i [class]="'bi ' + stat.icon"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">{{ stat.value }}</span>
+                            <span class="stat-label">{{ stat.label }}</span>
+                            <span class="stat-sub">{{ stat.sub }}</span>
+                        </div>
+                        @if (stat.trend) {
+                        <div class="stat-trend">
+                            <i class="bi bi-arrow-up-short"></i>
+                            <span>{{ stat.trendValue }}</span>
+                        </div>
+                        }
+                    </div>
+                    }
+                </section>
+
+                <!-- Grid activité + managers -->
+                <div class="content-grid">
+
+                    <!-- Activité récente -->
+                    <div class="card animate-in" style="--delay:0.2s">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i class="bi bi-clock-history"></i> Activité récente
+                            </h2>
+                            <a routerLink="/admin/logs" class="card-link">Voir les logs</a>
+                        </div>
+                        <div class="activity-list">
+                            @for (a of recentActivity; track a.id) {
+                            <div class="activity-item">
+                                <div class="activity-avatar" [class]="'activity-avatar--' + getActivityColor(a.type)">
+                                    <span>{{ a.initials }}</span>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="activity-user">{{ a.user }}</div>
+                                    <div class="activity-action">
+                                        <i [class]="'bi ' + getActivityIcon(a.type)"></i>
+                                        <span>{{ a.action }}</span>
+                                        <span class="activity-detail">— {{ a.detail }}</span>
+                                    </div>
+                                </div>
+                                <div class="activity-time">{{ a.time }}</div>
+                            </div>
+                            } @empty {
+                            <div class="empty-state">
+                                <i class="bi bi-inbox"></i>
+                                <p>Aucune activité récente</p>
+                            </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Table managers -->
+                    <div class="card animate-in" style="--delay:0.28s">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i class="bi bi-people-fill"></i> Managers
+                            </h2>
+                            <a routerLink="/admin/utilisateurs" class="card-link">Gérer</a>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Manager</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (m of managerRows; track m.id) {
+                                    <tr>
+                                        <td>
+                                            <div class="table-user">
+                                                <div class="table-avatar">
+                                                    {{ (m.firstname || m.name)[0].toUpperCase() }}
+                                                </div>
+                                                <div class="table-info">
+                                                    <div class="table-name">{{ m.firstname }} {{ m.name }}</div>
+                                                    <div class="table-email">{{ m.email }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge" [class.status-active]="m.is_active" [class.status-inactive]="!m.is_active">
+                                                <i class="bi" [class.bi-check-circle-fill]="m.is_active" [class.bi-x-circle-fill]="!m.is_active"></i>
+                                                {{ m.is_active ? 'Actif' : 'Inactif' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    } @empty {
+                                    <tr>
+                                        <td colspan="2" class="empty-state">
+                                            <i class="bi bi-people"></i>
+                                            <p>Aucun manager trouvé</p>
+                                        </td>
+                                    </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Actions rapides -->
+                <section class="quick-actions animate-in" style="--delay:0.35s">
+                    <h2 class="section-label">Actions rapides</h2>
+                    <div class="quick-grid">
+                        <a routerLink="/admin/utilisateurs" class="quick-card">
+                            <div class="quick-icon"><i class="bi bi-person-plus-fill"></i></div>
+                            <span>Nouveau manager</span>
+                        </a>
+                        <a routerLink="/admin/articles" class="quick-card">
+                            <div class="quick-icon"><i class="bi bi-file-text-fill"></i></div>
+                            <span>Tous les articles</span>
+                        </a>
+                        <a routerLink="/admin/stats" class="quick-card">
+                            <div class="quick-icon"><i class="bi bi-graph-up"></i></div>
+                            <span>Statistiques</span>
+                        </a>
+                        <a routerLink="/admin/logs" class="quick-card">
+                            <div class="quick-icon"><i class="bi bi-journal-code"></i></div>
+                            <span>Journaux d'audit</span>
+                        </a>
+                    </div>
+                </section>
+
+            </ng-container>
+            }
+
+        </main>
+    </div>
+</div>

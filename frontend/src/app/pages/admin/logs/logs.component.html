@@ -1,0 +1,249 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" (click)="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1 class="page-title">Logs</h1>
+                    <span class="page-breadcrumb">Historique des actions</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="refresh-btn" (click)="refreshData()" [disabled]="isLoading">
+                    <i class="bi bi-arrow-repeat" [class.spin]="isLoading"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement des logs...</p>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (errorMessage && !isLoading) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+                <button class="btn-retry" (click)="refreshData()">Réessayer</button>
+            </div>
+            }
+
+            <!-- Data Display -->
+            @if (!isLoading && !errorMessage) {
+
+            <!-- Filters -->
+            <div class="filters-bar animate-in">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Rechercher une action, un utilisateur, une IP..." [(ngModel)]="searchTerm" class="search-input">
+                </div>
+                <div class="filter-selects">
+                    <select class="filter-select" [(ngModel)]="selectedAction">
+                        <option value="all">Toutes les actions</option>
+                        @for (action of actionsList; track action) {
+                        <option [value]="action">{{ getActionLabel(action) }}</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <!-- Logs Table -->
+            <div class="card animate-in">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="bi bi-journal-code"></i> Journal des actions
+                    </h2>
+                    <div class="card-info">
+                        <span class="total-badge">{{ filteredLogs.length }} log{{ filteredLogs.length > 1 ? 's' : ''
+                            }}</span>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>Utilisateur</th>
+                                <th>Détails</th>
+                                <th>IP</th>
+                                <th>Date</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (log of filteredLogs; track log.id) {
+                            <tr class="animate-row" [style.--delay]="($index * 0.03) + 's'">
+                                <td>
+                                    <div class="action-cell">
+                                        <div class="action-icon" [style.background]="getActionColor(log.action)">
+                                            <i [class]="getActionIcon(log.action)"></i>
+                                        </div>
+                                        <span class="action-label">{{ getActionLabel(log.action) }}</span>
+                                    </div>
+                                </td>
+                                <td class="user-cell">
+                                    <div class="user-info">
+                                        <div class="user-avatar">
+                                            {{ getInitials(log.user?.name, log.user?.firstname) }}
+                                        </div>
+                                        <div class="user-details">
+                                            <div class="user-name">{{ log.user?.firstname }} {{ log.user?.name }}</div>
+                                            <div class="user-email">{{ log.user?.email || 'Utilisateur #' + log.user_id }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="details-cell">
+                                    <div class="details-preview">
+                                        @if (log.details) { {{ log.details.length > 60 ? (log.details | slice:0:60) + '...' : log.details }} } @else {
+                                        <span class="no-details">-</span> }
+                                    </div>
+                                </td>
+                                <td class="ip-cell">
+                                    <code class="ip-address">{{ log.ip_address || '-' }}</code>
+                                </td>
+                                <td class="date-cell">
+                                    <div class="date-info">
+                                        <i class="bi bi-clock"></i>
+                                        <span>{{ formatDate(log.created_at) }}</span>
+                                    </div>
+                                </td>
+                                <td class="actions-cell">
+                                    <button class="view-btn" (click)="viewLogDetails(log)" title="Voir les détails">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            } @empty {
+                            <tr>
+                                <td colspan="6" class="empty-state">
+                                    @if (searchTerm || selectedAction !== 'all') {
+                                    <i class="bi bi-search"></i>
+                                    <p>Aucun log ne correspond à votre recherche</p>
+                                    <button class="btn-empty-add" (click)="refreshData()">
+                                        <i class="bi bi-arrow-repeat"></i> Réinitialiser les filtres
+                                    </button> } @else {
+                                    <i class="bi bi-journal-code"></i>
+                                    <p>Aucun log trouvé</p>
+                                    }
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (lastPage > 1) {
+                <div class="pagination-wrapper">
+                    <div class="pagination">
+                        <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button> @for (page of pages; track page) {
+                        <button class="page-btn" [class.active]="page === currentPage" (click)="goToPage(page)">
+                            {{ page }}
+                        </button> }
+                        <button class="page-btn" [disabled]="currentPage === lastPage" (click)="goToPage(currentPage + 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="page-info">
+                        Page {{ currentPage }} sur {{ lastPage }} ({{ totalItems }} éléments)
+                    </div>
+                </div>
+                }
+            </div>
+
+            }
+
+        </main>
+    </div>
+</div>
+
+<!-- Modal Détail Log -->
+<div class="modal-overlay" [class.show]="showDetailModal" (click)="closeDetailModal()">
+    <div class="modal-container modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-journal-code"></i> Détail de l'action
+            </h3>
+            <button class="modal-close" (click)="closeDetailModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body view-modal-body">
+            @if (selectedLog) {
+            <div class="log-detail">
+                <!-- En-tête -->
+                <div class="detail-header">
+                    <div class="action-badge" [style.background]="getActionColor(selectedLog.action)">
+                        <i [class]="getActionIcon(selectedLog.action)"></i>
+                        <span>{{ getActionLabel(selectedLog.action) }}</span>
+                    </div>
+                    <div class="detail-date">
+                        <i class="bi bi-clock"></i> {{ formatDate(selectedLog.created_at) }}
+                    </div>
+                </div>
+
+                <!-- Informations -->
+                <div class="detail-section">
+                    <h4><i class="bi bi-info-circle"></i> Informations</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">ID</span>
+                            <span class="detail-value">{{ selectedLog.id }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Utilisateur</span>
+                            <span class="detail-value">{{ selectedLog.user?.firstname }} {{ selectedLog.user?.name
+                                }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value">{{ selectedLog.user?.email || '-' }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Adresse IP</span>
+                            <span class="detail-value"><code>{{ selectedLog.ip_address || '-' }}</code></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Détails -->
+                @if (selectedLog.details) {
+                <div class="detail-section">
+                    <h4><i class="bi bi-file-earmark-text"></i> Détails</h4>
+                    <div class="detail-content">
+                        <pre>{{ selectedLog.details }}</pre>
+                    </div>
+                </div>
+                }
+            </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeDetailModal()">Fermer</button>
+        </div>
+    </div>
+</div>

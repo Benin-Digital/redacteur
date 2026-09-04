@@ -1,0 +1,375 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" (click)="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1 class="page-title">Mes sites</h1>
+                    <span class="page-breadcrumb">Gérez et analysez vos sites web pour la génération d'articles</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="btn-add" (click)="openAddModal()">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Analyser un site</span>
+                </button>
+                <button class="refresh-btn" (click)="refreshData()" [disabled]="isLoading">
+                    <i class="bi bi-arrow-repeat" [class.spin]="isLoading"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement de vos sites...</p>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (errorMessage && !isLoading) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+                <button class="btn-retry" (click)="refreshData()">Réessayer</button>
+            </div>
+            }
+
+            <!-- Success Message -->
+            @if (successMessage && !isLoading) {
+            <div class="success-state">
+                <i class="bi bi-check-circle-fill"></i>
+                <p>{{ successMessage }}</p>
+            </div>
+            }
+
+            <!-- Data Display -->
+            @if (!isLoading && !errorMessage) {
+
+            <!-- Sites Table -->
+            <div class="card animate-in">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="bi bi-globe2"></i> Tous mes sites
+                    </h2>
+                    <div class="card-info">
+                        <span class="total-badge">{{ totalItems }} site{{ totalItems > 1 ? 's' : '' }}</span>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>URL</th>
+                                <th>Description</th>
+                                <th>Date d'analyse</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (site of sites; track site.id) {
+                            <tr class="animate-row" [style.--delay]="($index * 0.03) + 's'">
+                                <td class="site-url-cell">
+                                    <div class="site-url">
+                                        <i class="bi bi-link-45deg"></i>
+                                        <a [href]="site.url" target="_blank" rel="noopener noreferrer" class="site-link">
+                                            {{ site.url }}
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="site-desc-cell">
+                                    <div class="site-description">
+                                        {{ site.description || 'Aucune description' }}
+                                    </div>
+                                </td>
+                                <td class="date-cell">{{ formatDate(site.analyzed_at || site.created_at) }}</td>
+                                <td class="table-actions">
+                                    <!-- Bouton Voir l'analyse -->
+                                    <button class="action-btn view-btn" (click)="viewAnalysis(site)" title="Voir l'analyse">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <!-- Bouton Générer un article -->
+                                    <a routerLink="/manager/redaction" [queryParams]="{ siteId: site.id }" class="action-btn generate-btn" title="Générer un article">
+                                        <i class="bi bi-magic"></i>
+                                    </a>
+                                    <!-- Bouton Supprimer -->
+                                    <button class="action-btn delete-btn" (click)="confirmDelete(site)" title="Supprimer">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            } @empty {
+                            <tr>
+                                <td colspan="4" class="empty-state">
+                                    <i class="bi bi-globe2"></i>
+                                    <p>Aucun site analysé pour le moment</p>
+                                    <button class="btn-empty-add" (click)="openAddModal()">
+                                        <i class="bi bi-plus-circle"></i> Analyser mon premier site
+                                    </button>
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (lastPage > 1) {
+                <div class="pagination-wrapper">
+                    <div class="pagination">
+                        <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button> @for (page of pages; track page) {
+                        <button class="page-btn" [class.active]="page === currentPage" (click)="goToPage(page)">
+                            {{ page }}
+                        </button> }
+                        <button class="page-btn" [disabled]="currentPage === lastPage" (click)="goToPage(currentPage + 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="page-info">
+                        Page {{ currentPage }} sur {{ lastPage }} ({{ totalItems }} éléments)
+                    </div>
+                </div>
+                }
+            </div>
+
+            }
+
+        </main>
+    </div>
+</div>
+
+<!-- Modal Ajout Site -->
+<div class="modal-overlay" [class.show]="showAddModal" (click)="closeAddModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-plus-circle"></i> Analyser un site
+            </h3>
+            <button class="modal-close" (click)="closeAddModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <form [formGroup]="siteForm" (ngSubmit)="onSubmit()" class="modal-form">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="url" class="form-label">
+                        <i class="bi bi-link"></i> URL du site <span class="required">*</span>
+                    </label>
+                    <input type="url" id="url" formControlName="url" placeholder="https://exemple.com" class="form-control" [class.is-invalid]="siteForm.get('url')?.invalid && siteForm.get('url')?.touched"> @if (siteForm.get('url')?.invalid && siteForm.get('url')?.touched)
+                    {
+                    <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle"></i> URL valide requise (ex: https://exemple.com)
+                    </div>
+                    }
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">
+                        <i class="bi bi-file-text"></i> Description (optionnelle)
+                    </label>
+                    <textarea id="description" formControlName="description" rows="3" placeholder="Décrivez brièvement ce site..." class="form-control"></textarea>
+                    <div class="form-hint">
+                        <i class="bi bi-info-circle"></i> Une description aide l'IA à mieux comprendre le contexte
+                    </div>
+                </div>
+
+                <!-- Sélecteur de modèle LLM -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-cpu"></i> Modèle d'IA <span class="required">*</span>
+                    </label>
+                    <select formControlName="model_id" class="form-select" [class.is-invalid]="siteForm.get('model_id')?.invalid && siteForm.get('model_id')?.touched">
+                        <option value="">-- Sélectionnez un modèle --</option>
+                        @for (model of availableModels; track model.provider + model.model_name) {
+                        <option [value]="model.provider + '|' + model.model_name">
+                            {{ getModelLabel(model) }}
+                        </option>
+                        }
+                    </select> @if (siteForm.get('model_id')?.invalid && siteForm.get('model_id')?.touched) {
+                    <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle"></i> Veuillez sélectionner un modèle
+                    </div>
+                    } @if (availableModels.length === 0) {
+                    <div class="form-hint warning">
+                        <i class="bi bi-exclamation-triangle"></i> Aucun modèle de génération de texte n'est configuré. Contactez l'administrateur.
+                    </div>
+                    }
+                </div>
+
+                @if (errorMessage) {
+                <div class="form-error">
+                    <i class="bi bi-exclamation-triangle-fill"></i> {{ errorMessage }}
+                </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" (click)="closeAddModal()">Annuler</button>
+                <button type="submit" class="btn-primary" [disabled]="isSubmitting || siteForm.invalid || availableModels.length === 0">
+                    @if (isSubmitting) {
+                    <i class="bi bi-arrow-repeat spin"></i> Analyse en cours...
+                    } @else {
+                    <i class="bi bi-magic"></i> Analyser
+                    }
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Résultat Analyse (grand) -->
+<div class="modal-overlay" [class.show]="showAnalysisModal" (click)="closeAnalysisModal()">
+    <div class="modal-container modal-analysis" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-graph-up"></i> Résultat de l'analyse
+            </h3>
+            <button class="modal-close" (click)="closeAnalysisModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body analysis-body">
+            @if (analysisResult) {
+            <!-- Secteur d'activité -->
+            <div class="analysis-section">
+                <h4><i class="bi bi-building"></i> Secteur d'activité</h4>
+                <p>{{ analysisResult.secteur_activite }}</p>
+            </div>
+
+            <!-- Ton éditorial -->
+            <div class="analysis-section">
+                <h4><i class="bi bi-chat-text"></i> Ton éditorial</h4>
+                <div class="analysis-grid">
+                    <div class="analysis-item">
+                        <span class="analysis-label">Principal</span>
+                        <span class="analysis-value">{{ analysisResult.ton_editorial?.principal }}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Niveau de langue</span>
+                        <span class="analysis-value">{{ analysisResult.ton_editorial?.niveau_langue }}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Style de phrases</span>
+                        <span class="analysis-value">{{ analysisResult.ton_editorial?.style_phrases }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Public cible -->
+            <div class="analysis-section">
+                <h4><i class="bi bi-people"></i> Public cible</h4>
+                <div class="tags-list">
+                    @for (target of analysisResult.public_cible_detecte; track target) {
+                    <span class="tag">{{ target }}</span> }
+                </div>
+            </div>
+
+            <!-- Mots clés -->
+            <div class="analysis-section">
+                <h4><i class="bi bi-key"></i> Mots clés SEO</h4>
+                <div class="tags-list">
+                    @for (keyword of analysisResult.mots_cles_seo_visibles; track keyword) {
+                    <span class="tag keyword">{{ keyword }}</span> }
+                </div>
+            </div>
+
+            <!-- Thèmes suggérés (cliquables) -->
+            <div class="analysis-section themes-section">
+                <h4><i class="bi bi-lightbulb"></i> Thèmes suggérés pour vos articles</h4>
+                <p class="themes-hint">Cliquez sur un thème pour générer un article directement</p>
+                <div class="themes-grid">
+                    @for (theme of suggestedThemes; track theme.titre) {
+                    <div class="theme-card" (click)="selectTheme(theme)">
+                        <div class="theme-icon">
+                            <i class="bi bi-file-text"></i>
+                        </div>
+                        <div class="theme-content">
+                            <div class="theme-title">{{ theme.titre }}</div>
+                            <div class="theme-keyword">
+                                <i class="bi bi-tag"></i> {{ theme.mot_cle_principal }}
+                            </div>
+                        </div>
+                        <div class="theme-arrow">
+                            <i class="bi bi-arrow-right"></i>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Informations supplémentaires -->
+            <div class="analysis-section">
+                <h4><i class="bi bi-info-circle"></i> Informations complémentaires</h4>
+                <div class="analysis-grid two-cols">
+                    <div class="analysis-item">
+                        <span class="analysis-label">Types de contenu</span>
+                        <span class="analysis-value">{{ analysisResult.types_de_contenu?.join(', ') }}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Longueur moyenne</span>
+                        <span class="analysis-value">{{ analysisResult.structure_articles?.longueur_moyenne_mots
+                            }}</span>
+                    </div>
+                    <div class="analysis-item">
+                        <span class="analysis-label">Call to action typique</span>
+                        <span class="analysis-value">{{ analysisResult.call_to_action_typique }}</span>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeAnalysisModal()">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmation Suppression -->
+<div class="modal-overlay" [class.show]="showDeleteConfirm" (click)="cancelDelete()">
+    <div class="modal-container modal-confirm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">Confirmer la suppression</h3>
+            <button class="modal-close" (click)="cancelDelete()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body confirm-body">
+            <div class="confirm-icon delete-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <p>Êtes-vous sûr de vouloir supprimer le site</p>
+            <p class="confirm-name">{{ siteToDelete?.url }} ?</p>
+            <p class="confirm-warning">Cette action est irréversible. Les articles associés à ce site seront également supprimés.
+            </p>
+        </div>
+        <div class="modal-footer confirm-footer">
+            <button class="btn-secondary" (click)="cancelDelete()">Annuler</button>
+            <button class="btn-danger" (click)="deleteSite()" [disabled]="isSubmitting">
+                @if (isSubmitting) {
+                <i class="bi bi-arrow-repeat spin"></i> Suppression...
+                } @else {
+                <i class="bi bi-trash3"></i> Supprimer
+                }
+            </button>
+        </div>
+    </div>
+</div>

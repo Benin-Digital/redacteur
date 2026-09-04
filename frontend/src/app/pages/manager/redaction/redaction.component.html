@@ -1,0 +1,807 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" (click)="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1 class="page-title">Rédaction IA</h1>
+                    <span class="page-breadcrumb">Générez des articles optimisés pour le référencement</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                @if (article) {
+                <button class="btn-new" (click)="newArticle()">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Nouvel article</span>
+                </button> }
+                <button class="refresh-btn" (click)="loadSites()" [disabled]="isLoading">
+                    <i class="bi bi-arrow-repeat" [class.spin]="isLoading"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement de vos sites...</p>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (errorMessage) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+            </div>
+            }
+
+            <!-- Success Message -->
+            @if (successMessage) {
+            <div class="success-state">
+                <i class="bi bi-check-circle-fill"></i>
+                <p>{{ successMessage }}</p>
+            </div>
+            }
+
+            <!-- Formulaire de génération (visible seulement si pas d'article) -->
+            @if (!article) {
+            <div class="card animate-in">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="bi bi-magic"></i> Générer un article
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form [formGroup]="generateForm" (ngSubmit)="generateArticle()" class="generate-form">
+                        <!-- Sélection du site -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-globe2"></i> Site web <span class="required">*</span>
+                            </label>
+                            <select formControlName="site_id" class="form-select" (change)="onSiteChange()">
+                                <option [value]="null">-- Sélectionnez un site --</option>
+                                @for (site of sites; track site.id) {
+                                <option [value]="site.id">{{ site.url }}</option>
+                                }
+                            </select> @if (generateForm.get('site_id')?.invalid && generateForm.get('site_id')?.touched) {
+                            <div class="invalid-feedback">
+                                <i class="bi bi-exclamation-circle"></i> Veuillez sélectionner un site
+                            </div>
+                            }
+                        </div>
+
+                        <!-- Sélecteur de modèle LLM -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-cpu"></i> Modèle d'IA <span class="required">*</span>
+                            </label>
+                            <select formControlName="model_id" class="form-select" [class.is-invalid]="generateForm.get('model_id')?.invalid && generateForm.get('model_id')?.touched">
+                                <option value="">-- Sélectionnez un modèle --</option>
+                                @for (model of availableModels; track model.provider + model.model_name) {
+                                <option [value]="model.provider + '|' + model.model_name">
+                                    {{ getModelLabel(model) }}
+                                </option>
+                                }
+                            </select> @if (generateForm.get('model_id')?.invalid && generateForm.get('model_id')?.touched) {
+                            <div class="invalid-feedback">
+                                <i class="bi bi-exclamation-circle"></i> Veuillez sélectionner un modèle
+                            </div>
+                            } @if (availableModels.length === 0) {
+                            <div class="form-hint warning">
+                                <i class="bi bi-exclamation-triangle"></i> Aucun modèle de génération de texte n'est configuré. Contactez l'administrateur.
+                            </div>
+                            }
+                        </div>
+
+                        <!-- Thèmes suggérés -->
+                        @if (suggestedThemes.length > 0) {
+                        <div class="themes-suggested">
+                            <label class="form-label">
+                                <i class="bi bi-lightbulb"></i> Thèmes suggérés par l'IA
+                            </label>
+                            <div class="themes-list">
+                                @for (theme of suggestedThemes; track theme.titre) {
+                                <button type="button" class="theme-pill" (click)="selectSuggestedTheme(theme)">
+                                    <i class="bi bi-file-text"></i> {{ theme.titre }}
+                                </button> }
+                            </div>
+                        </div>
+                        } @else if (selectedSiteId && !isLoading) {
+                        <div class="themes-empty">
+                            <i class="bi bi-info-circle"></i>
+                            <span>Aucun thème suggéré. Analysez le site pour générer des thèmes.</span>
+                        </div>
+                        }
+
+                        <!-- Sujet -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-pencil"></i> Sujet de l'article <span class="required">*</span>
+                            </label>
+                            <input type="text" formControlName="sujet" class="form-control" placeholder="Ex: Pourquoi la cybersécurité est indispensable pour les PME"> @if (generateForm.get('sujet')?.invalid && generateForm.get('sujet')?.touched) {
+                            <div class="invalid-feedback">
+                                <i class="bi bi-exclamation-circle"></i> Sujet requis (5-200 caractères)
+                            </div>
+                            }
+                        </div>
+
+                        <!-- Mot clé principal -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-tag"></i> Mot-clé principal SEO <span class="required">*</span>
+                            </label>
+                            <input type="text" formControlName="mot_cle_principal" class="form-control" placeholder="Ex: cybersécurité PME Bénin"> @if (generateForm.get('mot_cle_principal')?.invalid && generateForm.get('mot_cle_principal')?.touched) {
+                            <div class="invalid-feedback">
+                                <i class="bi bi-exclamation-circle"></i> Mot-clé requis (2-100 caractères)
+                            </div>
+                            }
+                        </div>
+
+                        <!-- Longueur cible -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-text-paragraph"></i> Longueur cible
+                            </label>
+                            <div class="length-options">
+                                @for (len of [500, 800, 1000, 1200]; track len) {
+                                <label class="length-option">
+                                    <input type="radio" formControlName="longueur_cible" [value]="len">
+                                    <span>{{ len }} mots</span>
+                                </label> }
+                            </div>
+                        </div>
+
+                        <!-- Bouton de génération -->
+                        <button type="submit" class="btn-generate" [disabled]="isGenerating || generateForm.invalid">
+                            @if (isGenerating) {
+                            <i class="bi bi-arrow-repeat spin"></i> Génération en cours...
+                            } @else {
+                            <i class="bi bi-magic"></i> Générer l'article
+                            }
+                        </button>
+
+                        <!-- Barre de progression -->
+                        @if (showProgress && isGenerating) {
+                        <div class="progress-container animate-in">
+                            <div class="progress-bar-wrapper">
+                                <div class="progress-bar" [style.width.%]="progressValue"></div>
+                            </div>
+                            <div class="progress-text">
+                                <i class="bi bi-arrow-repeat spin"></i>
+                                <span>{{ progressMessage }}</span>
+                                <span class="progress-percent">{{ progressValue }}%</span>
+                            </div>
+                        </div>
+                        }
+                    </form>
+                </div>
+            </div>
+            }
+
+            <!-- Affichage de l'article généré -->
+            @if (article) {
+            <div class="article-container animate-in">
+                <!-- Métriques -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">{{ getWordCount(articleMarkdown) }}</div>
+                        <div class="metric-label">Mots</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ articleMetaDesc?.length || 0 }}</div>
+                        <div class="metric-label">Meta desc. (chars)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ article.statut === 'publie' ? '✓' : '—' }}</div>
+                        <div class="metric-label">CTA présent</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">{{ articleTitre | slice:0:20 }}{{ articleTitre.length > 20 ? '…' : '' }}
+                        </div>
+                        <div class="metric-label">Titre (H1)</div>
+                    </div>
+                </div>
+
+                <!-- Catégorie et tags -->
+                <div class="info-row">
+                    <div class="info-item">
+                        <span class="info-label">Catégorie :</span>
+                        <span class="info-value">{{ editForm.value.categorie || article.categorie || 'Non spécifiée'
+                            }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Tags :</span>
+                        <span class="info-value">{{ getTagsList().join(', ') || 'Aucun' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Statut :</span>
+                        <span class="status-badge" [class]="getStatusClass(article.statut)">
+                            <i class="bi" [class.bi-pencil]="article.statut === 'brouillon'"
+                                [class.bi-calendar-check]="article.statut === 'programme'"
+                                [class.bi-check-circle-fill]="article.statut === 'publie'"></i>
+                            {{ getStatusLabel(article.statut) }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Onglets -->
+                <div class="tabs">
+                    <button class="tab-btn" [class.active]="activeTab === 'apercu'" (click)="setActiveTab('apercu')">
+                        <i class="bi bi-eye"></i> Aperçu
+                    </button>
+                    <button class="tab-btn" [class.active]="activeTab === 'metadonnees'" (click)="setActiveTab('metadonnees')">
+                        <i class="bi bi-info-circle"></i> Métadonnées
+                    </button>
+                    <button class="tab-btn" [class.active]="activeTab === 'actions'" (click)="setActiveTab('actions')">
+                        <i class="bi bi-gear"></i> Actions
+                    </button>
+                </div>
+
+                <!-- Onglet Aperçu -->
+                @if (activeTab === 'apercu') {
+                <div class="tab-content">
+                    <div class="article-preview">
+                        <div class="preview-header">
+                            <h1 class="preview-title">{{ editForm.value.titre || articleTitre }}</h1>
+                            <div class="preview-meta">
+                                <span><i class="bi bi-globe2"></i> {{ selectedSite ? selectedSite.url : '' }}</span>
+                            </div>
+                        </div>
+                        <div class="preview-content">
+                            {{ editForm.value.contenu_md || articleMarkdown }}
+                        </div>
+                    </div>
+                </div>
+                }
+
+                <!-- Onglet Métadonnées -->
+                @if (activeTab === 'metadonnees') {
+                <div class="tab-content">
+                    <div class="metadata-viewer">
+                        <div class="metadata-item">
+                            <span class="metadata-label">ID</span>
+                            <span class="metadata-value">{{ article.id }}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Titre</span>
+                            <span class="metadata-value">{{ article.titre }}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Slug</span>
+                            <span class="metadata-value">{{ article.slug }}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Meta description</span>
+                            <span class="metadata-value">{{ article.meta_desc || '-' }}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Mot-clé principal</span>
+                            <span class="metadata-value">{{ article.mot_cle_principal || '-' }}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Catégorie</span>
+                            <span class="metadata-value">{{ article.categorie || '-' }}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Tags</span>
+                            <span class="metadata-value">{{ article.tags?.join(', ') || '-' }}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Date de création</span>
+                            <span class="metadata-value">{{ article.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
+                        </div>
+                        @if (article.programme_le) {
+                        <div class="metadata-item">
+                            <span class="metadata-label">Programmé le</span>
+                            <span class="metadata-value">{{ article.programme_le | date:'dd/MM/yyyy HH:mm' }}</span>
+                        </div>
+                        } @if (article.publie_le) {
+                        <div class="metadata-item">
+                            <span class="metadata-label">Publié le</span>
+                            <span class="metadata-value">{{ article.publie_le | date:'dd/MM/yyyy HH:mm' }}</span>
+                        </div>
+                        }
+                    </div>
+                </div>
+                }
+
+                <!-- Onglet Actions -->
+                @if (activeTab === 'actions') {
+                <div class="tab-content">
+                    <div class="actions-panel">
+                        <!-- Section correction -->
+                        <div class="actions-section">
+                            <h3><i class="bi bi-pencil-square"></i> Correction manuelle</h3>
+                            <form [formGroup]="editForm" class="edit-form">
+                                <div class="form-group">
+                                    <label class="form-label">Titre (H1)</label>
+                                    <input type="text" formControlName="titre" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Meta description</label>
+                                    <textarea formControlName="meta_desc" rows="2" class="form-control"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Slug</label>
+                                    <input type="text" formControlName="slug" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Catégorie</label>
+                                    <select formControlName="categorie" class="form-select">
+                                        <option [value]="null">-- Sélectionnez --</option>
+                                        @for (cat of categories; track cat) {
+                                        <option [value]="cat">{{ cat }}</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tags (max 5, séparés par des virgules)</label>
+                                    <input type="text" [(ngModel)]="customTags" class="form-control" placeholder="SEO, marketing, digital" [ngModelOptions]="{standalone: true}">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Contenu (Markdown)</label>
+                                    <textarea formControlName="contenu_md" rows="15" class="form-control monospace"></textarea>
+                                </div>
+                                <button type="button" class="btn-apply" (click)="applyCorrections()" [disabled]="isUpdating">
+                                    @if (isUpdating) {
+                                    <i class="bi bi-arrow-repeat spin"></i> Application...
+                                    } @else {
+                                    <i class="bi bi-save"></i> Appliquer les corrections
+                                    }
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Section publication -->
+                        <div class="actions-section">
+                            <h3><i class="bi bi-rocket"></i> Publication</h3>
+
+                            @if (article.statut === 'programme') {
+                            <!-- État PROGRAMMÉ -->
+                            <div class="schedule-info-card">
+                                <div class="schedule-info-icon">
+                                    <i class="bi bi-calendar-clock"></i>
+                                </div>
+                                <div class="schedule-info-content">
+                                    <div class="schedule-info-title">Article programmé</div>
+                                    <div class="schedule-info-date">
+                                        Publication prévue le {{ article.programme_le | date:'dd/MM/yyyy à HH:mm' }}
+                                    </div>
+                                    <div class="schedule-info-actions">
+                                        <button class="btn-edit-schedule" (click)="openEditScheduleModal()" [disabled]="isEditingSchedule">
+                                            <i class="bi bi-pencil"></i> Modifier la date
+                                        </button>
+                                        <button class="btn-cancel-schedule" (click)="cancelSchedule()" [disabled]="isCancelling">
+                                            <i class="bi bi-x-circle"></i> Annuler
+                                        </button>
+                                        <button class="btn-publish-now" (click)="publishArticleWithCheck()" [disabled]="isPublishing">
+                                            <i class="bi bi-cloud-upload"></i> Publier maintenant
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            } @else {
+                            <!-- État BROUILLON ou AUTRE -->
+                            <div class="publish-buttons">
+                                <button class="btn-publish" (click)="publishArticleWithCheck()" [disabled]="isPublishing || article.statut === 'publie'">
+                                    @if (isPublishing) {
+                                    <i class="bi bi-arrow-repeat spin"></i> Publication en cours...
+                                    } @else {
+                                    <i class="bi bi-cloud-upload"></i> Publier maintenant
+                                    }
+                                </button>
+                                <button class="btn-schedule" (click)="openScheduleModal()" [disabled]="article.statut === 'publie'">
+                                    <i class="bi bi-calendar-plus"></i> Programmer
+                                </button>
+                            </div>
+                            }
+
+                            <p class="publish-hint">La publication envoie l'article sur WordPress. Assurez-vous que la connexion est configurée.</p>
+
+                            <!-- Barre de progression pour publication -->
+                            @if (showProgress && isPublishing) {
+                            <div class="progress-container progress-orange animate-in">
+                                <div class="progress-bar-wrapper">
+                                    <div class="progress-bar progress-bar-orange" [style.width.%]="progressValue"></div>
+                                </div>
+                                <div class="progress-text">
+                                    <i class="bi bi-arrow-repeat spin"></i>
+                                    <span>{{ progressMessage }}</span>
+                                    <span class="progress-percent">{{ progressValue }}%</span>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                        <!-- Section médias -->
+                        <!-- <div class="actions-section">
+                            <h3><i class="bi bi-images"></i> Médias</h3>
+                            <div class="media-buttons">
+                                <button class="btn-media" (click)="openImageModal()" [disabled]="!article">
+                                    <i class="bi bi-image"></i> Ajouter des images
+                                </button>
+                                <button class="btn-media video" (click)="openVideoModal()" [disabled]="!article">
+                                    <i class="bi bi-film"></i> Ajouter une vidéo
+                                </button>
+                            </div>
+
+                        @if (articleMedia.length > 0) {
+                        <div class="media-list">
+                            <h4>Médias intégrés ({{ articleMedia.length }})</h4>
+                            <div class="media-grid">
+                                @for (media of articleMedia; track media.id) {
+                                <div class="media-item" [class.is-hero]="media.is_hero">
+                                    @if (media.type === 'image') {
+                                    <img [src]="media.url" [alt]="media.file_name" loading="lazy"> } @else {
+                                    <div class="media-video-placeholder">
+                                        <i class="bi bi-film"></i>
+                                        <span>Vidéo</span>
+                                    </div>
+                                    }
+                                    <div class="media-item-actions">
+                                        @if (media.type === 'image' && !media.is_hero) {
+                                        <button class="btn-hero" (click)="setHeroImage(media.id)" title="Définir comme image principale">
+                                                <i class="bi bi-star"></i>
+                                            </button> } @if (media.is_hero) {
+                                        <span class="hero-badge"><i class="bi bi-star-fill"></i> Principal</span> }
+                                        <button class="btn-download" (click)="downloadMedia(media)" title="Télécharger">
+                                                <i class="bi bi-download"></i>
+                                            </button>
+                                        <button class="btn-delete-media" (click)="deleteMedia(media.id)" title="Supprimer">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                    </div>
+                                </div>
+                                }
+                            </div>
+                        </div>
+                        }
+                    </div> -->
+                    </div>
+                </div>
+                }
+            </div>
+            }
+
+        </main>
+    </div>
+</div>
+
+<!-- Modal Configuration WordPress -->
+<div class="modal-overlay" [class.show]="showWpConfigModal" (click)="closeWpConfigModal()">
+    <div class="modal-container modal-md" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-wordpress"></i> Configuration WordPress
+            </h3>
+            <button class="modal-close" (click)="closeWpConfigModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <form [formGroup]="wpConfigForm" (ngSubmit)="saveWpConfigAndPublish()">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">URL WordPress</label>
+                    <input type="url" formControlName="wp_url" class="form-control" placeholder="https://monsite.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nom d'utilisateur</label>
+                    <input type="text" formControlName="wp_username" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mot de passe application</label>
+                    <div class="password-input-wrapper">
+                        <input [type]="showWpPassword ? 'text' : 'password'" formControlName="wp_app_password" class="form-control">
+                        <button type="button" class="password-toggle" (click)="showWpPassword = !showWpPassword">
+                            <i class="bi" [class.bi-eye]="!showWpPassword" [class.bi-eye-slash]="showWpPassword"></i>
+                        </button>
+                    </div>
+                    <div class="form-hint">
+                        <i class="bi bi-info-circle"></i>
+                        <a href="/docs/mot-de-passe-application-wordpress" target="_blank" class="help-link">
+                            En savoir plus sur le mot de passe d'application WordPress
+                        </a>
+                    </div>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" formControlName="test_connection">
+                        <span>Tester la connexion</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" (click)="closeWpConfigModal()">Annuler</button>
+                <button type="submit" class="btn-primary" [disabled]="isSavingWpConfig">
+                    @if (isSavingWpConfig) {
+                    <i class="bi bi-arrow-repeat spin"></i> Enregistrement...
+                    } @else {
+                    <i class="bi bi-save"></i> Enregistrer
+                    }
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Programmation -->
+<div class="modal-overlay" [class.show]="showScheduleModal" (click)="closeScheduleModal()">
+    <div class="modal-container modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-calendar-check"></i> Programmer la publication
+            </h3>
+            <button class="modal-close" (click)="closeScheduleModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-calendar"></i> Date et heure de publication
+                </label>
+                <input type="datetime-local" [(ngModel)]="scheduleDateTime" class="form-control" [min]="minScheduleDate"> @if (scheduleDateTime) {
+                <div class="form-hint">
+                    Publication prévue le : {{ scheduleDateTime | date:'dd/MM/yyyy à HH:mm' }}
+                </div>
+                }
+            </div>
+            @if (scheduleError) {
+            <div class="form-error">
+                <i class="bi bi-exclamation-triangle-fill"></i> {{ scheduleError }}
+            </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeScheduleModal()">Annuler</button>
+            <button type="button" class="btn-schedule-confirm" (click)="schedulePublication()" [disabled]="!scheduleDateTime || isScheduling">
+                @if (isScheduling) {
+                <i class="bi bi-arrow-repeat spin"></i> Programmation...
+                } @else {
+                <i class="bi bi-check-lg"></i> Programmer
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Modification Programmation -->
+<div class="modal-overlay" [class.show]="showEditScheduleModal" (click)="closeEditScheduleModal()">
+    <div class="modal-container modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-calendar-check"></i> Modifier la date de publication
+            </h3>
+            <button class="modal-close" (click)="closeEditScheduleModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-calendar"></i> Nouvelle date et heure
+                </label>
+                <input type="datetime-local" [(ngModel)]="editScheduleDateTime" class="form-control" [min]="minScheduleDate"> @if (editScheduleDateTime) {
+                <div class="form-hint">
+                    Publication prévue le : {{ editScheduleDateTime | date:'dd/MM/yyyy à HH:mm' }}
+                </div>
+                }
+            </div>
+            @if (editScheduleError) {
+            <div class="form-error">
+                <i class="bi bi-exclamation-triangle-fill"></i> {{ editScheduleError }}
+            </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeEditScheduleModal()">Annuler</button>
+            <button type="button" class="btn-schedule-confirm" (click)="updateSchedule()" [disabled]="!editScheduleDateTime || isUpdatingSchedule">
+                @if (isUpdatingSchedule) {
+                <i class="bi bi-arrow-repeat spin"></i> Modification...
+                } @else {
+                <i class="bi bi-check-lg"></i> Modifier
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+   MODAL GÉNÉRATION D'IMAGES
+   ============================================================ -->
+<div class="modal-overlay" [class.show]="showImageModal" (click)="closeImageModal()">
+    <div class="modal-container modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-image"></i> Générer des images
+            </h3>
+            <button class="modal-close" (click)="closeImageModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Options de génération -->
+            <form [formGroup]="imageForm" class="media-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nombre d'images</label>
+                        <input type="number" formControlName="count" class="form-control" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Format</label>
+                        <select formControlName="aspect_ratio" class="form-select">
+                            <option value="16:9">Paysage (16:9)</option>
+                            <option value="9:16">Portrait (9:16)</option>
+                            <option value="1:1">Carré (1:1)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Style</label>
+                    <input type="text" formControlName="style" class="form-control" placeholder="moderne, professionnel, minimaliste">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Prompt personnalisé (optionnel)</label>
+                    <textarea formControlName="custom_prompt" rows="3" class="form-control" placeholder="Description détaillée de l'image souhaitée..."></textarea>
+                </div>
+                <button type="button" class="btn-generate-media" (click)="generateImages()" [disabled]="isGeneratingImages || imageForm.invalid">
+                    @if (isGeneratingImages) {
+                    <i class="bi bi-arrow-repeat spin"></i> Génération en cours...
+                    } @else {
+                    <i class="bi bi-magic"></i> Générer les images
+                    }
+                </button>
+            </form>
+
+            <!-- Images générées -->
+            <!-- Images générées -->
+            @if (generatedImages && generatedImages.length > 0) {
+            <div class="generated-media">
+                <h4>Images générées ({{ generatedImages.length }})</h4>
+                <div class="media-grid">
+                    @for (img of generatedImages; track $index) {
+                    <div class="media-item" [class.selected]="selectedImageIds.has(img.id)" (click)="toggleImageSelection(img.id)">
+                        <img [src]="img.url" [alt]="img?.file_name || 'Image générée'" loading="lazy">
+                        <div class="media-item-check">
+                            <i class="bi" [class.bi-check-circle-fill]="selectedImageIds.has(img.id)" [class.bi-circle]="!selectedImageIds.has(img.id)"></i>
+                        </div>
+                        <div class="media-item-actions">
+                            <button class="btn-download" (click)="downloadMedia(img)" title="Télécharger">
+                                <i class="bi bi-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                    }
+                </div>
+                <div class="media-footer-actions">
+                    <button class="btn-integrate" (click)="integrateSelectedMedia()" [disabled]="selectedImageIds.size === 0 || isLoadingMedia">
+                        <i class="bi bi-check2-all"></i> Intégrer {{ selectedImageIds.size }} image(s)
+                    </button>
+                    <button class="btn-clear-selection" (click)="selectedImageIds.clear()" [disabled]="selectedImageIds.size === 0">
+                        <i class="bi bi-x"></i> Désélectionner tout
+                    </button>
+                </div>
+                <!-- Barre de progression pour l'intégration -->
+                @if (showMediaProgress && isLoadingMedia) {
+                <div class="progress-container progress-green animate-in">
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-bar progress-bar-green" [style.width.%]="mediaProgressValue"></div>
+                    </div>
+                    <div class="progress-text">
+                        <i class="bi bi-arrow-repeat spin"></i>
+                        <span>{{ mediaProgressMessage }}</span>
+                        <span class="progress-percent">{{ mediaProgressValue }}%</span>
+                    </div>
+                </div>
+                }
+            </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeImageModal()">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+   MODAL GÉNÉRATION DE VIDÉO
+   ============================================================ -->
+<div class="modal-overlay" [class.show]="showVideoModal" (click)="closeVideoModal()">
+    <div class="modal-container modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-film"></i> Générer une vidéo
+            </h3>
+            <button class="modal-close" (click)="closeVideoModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Options de génération -->
+            <form [formGroup]="videoForm" class="media-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Durée (secondes)</label>
+                        <input type="number" formControlName="duration" class="form-control" min="5" max="30">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Format</label>
+                        <select formControlName="aspect_ratio" class="form-select">
+                            <option value="16:9">Paysage (16:9)</option>
+                            <option value="9:16">Portrait (9:16)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Style</label>
+                    <input type="text" formControlName="style" class="form-control" placeholder="cinematographique, dynamique, professionnel">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Prompt personnalisé (optionnel)</label>
+                    <textarea formControlName="custom_prompt" rows="3" class="form-control" placeholder="Description détaillée de la vidéo souhaitée..."></textarea>
+                </div>
+                <button type="button" class="btn-generate-media video" (click)="generateVideo()" [disabled]="isGeneratingVideo || videoForm.invalid">
+                    @if (isGeneratingVideo) {
+                    <i class="bi bi-arrow-repeat spin"></i> Génération en cours...
+                    } @else {
+                    <i class="bi bi-magic"></i> Générer la vidéo
+                    }
+                </button>
+            </form>
+
+            <!-- Vidéo générée -->
+            @if (generatedVideo) {
+            <div class="generated-media">
+                <h4>Vidéo générée</h4>
+                <div class="video-preview">
+                    <video controls [src]="generatedVideo.url" class="video-player"></video>
+                    <div class="video-info">
+                        <span><i class="bi bi-clock"></i> {{ generatedVideo.duration }}s</span>
+                        <span><i class="bi bi-file-earmark"></i> {{ generatedVideo.file_name }}</span>
+                    </div>
+                    <div class="video-actions">
+                        <button class="btn-integrate" (click)="downloadMedia(generatedVideo)">
+                            <i class="bi bi-download"></i> Télécharger
+                        </button>
+                        <button class="btn-integrate" (click)="integrateSelectedMedia()">
+                            <i class="bi bi-check2-all"></i> Intégrer dans l'article
+                        </button>
+                    </div>
+                    @if (showMediaProgress && isLoadingMedia) {
+                    <div class="progress-container progress-green animate-in">
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar progress-bar-green" [style.width.%]="mediaProgressValue"></div>
+                        </div>
+                        <div class="progress-text">
+                            <i class="bi bi-arrow-repeat spin"></i>
+                            <span>{{ mediaProgressMessage }}</span>
+                            <span class="progress-percent">{{ mediaProgressValue }}%</span>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeVideoModal()">Fermer</button>
+        </div>
+    </div>
+</div>

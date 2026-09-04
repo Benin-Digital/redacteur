@@ -1,0 +1,268 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" (click)="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1 class="page-title">Configuration WordPress</h1>
+                    <span class="page-breadcrumb">Connectez vos sites à WordPress</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="refresh-btn" (click)="refreshData()" [disabled]="isLoading">
+                    <i class="bi bi-arrow-repeat" [class.spin]="isLoading"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement de vos sites...</p>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (errorMessage && !isLoading) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+                <button class="btn-retry" (click)="refreshData()">Réessayer</button>
+            </div>
+            }
+
+            <!-- Success Message -->
+            @if (successMessage && !isLoading) {
+            <div class="success-state">
+                <i class="bi bi-check-circle-fill"></i>
+                <p>{{ successMessage }}</p>
+            </div>
+            }
+
+            <!-- Data Display -->
+            @if (!isLoading && !errorMessage) {
+
+            <!-- Sites Grid -->
+            <div class="sites-grid animate-in">
+                @for (site of sites; track site.id) {
+                <div class="site-card" [class.selected]="selectedSite?.id === site.id" (click)="selectSite(site)">
+                    <div class="site-card-icon">
+                        <i class="bi bi-globe2"></i>
+                    </div>
+                    <div class="site-card-content">
+                        <div class="site-card-url">{{ site.url }}</div>
+                        <div class="site-card-date">Analysé le {{ formatDate(site.analyzed_at || site.created_at) }}</div>
+                    </div>
+                    <div class="site-card-status">
+                        @if ((selectedSite?.id === site.id && currentConfig)) {
+                        <i class="bi bi-check-circle-fill" title="Configuré"></i> } @else {
+                        <i class="bi bi-circle" title="Non configuré"></i> }
+                    </div>
+                </div>
+                } @empty {
+                <div class="empty-sites">
+                    <i class="bi bi-globe2"></i>
+                    <p>Aucun site analysé pour le moment</p>
+                    <a routerLink="/manager/sites" class="btn-link">Analyser un site</a>
+                </div>
+                }
+            </div>
+
+            <!-- Configuration Details -->
+            @if (selectedSite) {
+            <div class="config-card animate-in">
+                <div class="config-header">
+                    <h2 class="config-title">
+                        <i class="bi bi-wordpress"></i> Configuration WordPress
+                    </h2>
+                    <div class="config-actions">
+                        <button class="btn-test" (click)="testConnection()" [disabled]="isTesting || !hasConfig">
+                            @if (isTesting) {
+                                <i class="bi bi-arrow-repeat spin"></i> Test en cours...
+                            } @else {
+                                <i class="bi bi-plug"></i> Tester la connexion
+                            }
+                        </button> @if (hasConfig) {
+                        <button class="btn-delete" (click)="deleteConfig()" [disabled]="isSubmitting">
+                            <i class="bi bi-trash3"></i> Supprimer
+                        </button> }
+                    </div>
+                </div>
+
+                @if (hasConfig) {
+                <div class="config-content">
+                    <div class="config-details">
+                        <div class="detail-item">
+                            <span class="detail-label">URL WordPress</span>
+                            <span class="detail-value">
+                                <i class="bi bi-link-45deg"></i>
+                                <a [href]="currentConfig?.wp_url" target="_blank" rel="noopener noreferrer">
+                                    {{ currentConfig?.wp_url }}
+                                </a>
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Nom d'utilisateur</span>
+                            <span class="detail-value">
+                                <i class="bi bi-person"></i>
+                                {{ currentConfig?.wp_username }}
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Mot de passe</span>
+                            <span class="detail-value">
+                                <i class="bi bi-lock"></i>
+                                {{ currentConfig?.wp_app_password_masked }}
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Statut</span>
+                            <span class="detail-value">
+                                <span class="status-badge" [class.active]="currentConfig?.is_active" [class.inactive]="!currentConfig?.is_active">
+                                    <i class="bi" [class.bi-check-circle]="currentConfig?.is_active" [class.bi-circle]="!currentConfig?.is_active"></i>
+                                    {{ currentConfig?.is_active ? 'Actif' : 'Inactif' }}
+                                </span>
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Dernier test</span>
+                            <span class="detail-value">
+                                @if (currentConfig?.last_test_at) {
+                                <i class="bi bi-clock"></i>
+                                <!-- {{ formatDate(currentConfig.last_test_at) }} -->
+                                <span class="test-status" [class.success]="currentConfig?.last_test_status" [class.error]="!currentConfig?.last_test_status">
+                                    ({{ currentConfig?.last_test_status ? 'Succès' : 'Échec' }})
+                                </span> } @else {
+                            <i class="bi bi-dash-circle"></i> Jamais testé }
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Utilisations</span>
+                            <span class="detail-value">
+                                <i class="bi bi-bar-chart"></i>
+                                {{ currentConfig?.use_count || 0 }} publication(s)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                } @else {
+                <div class="config-empty">
+                    <i class="bi bi-gear"></i>
+                    <p>Aucune configuration pour ce site</p>
+                    <button class="btn-primary-sm" (click)="openModal()">
+                        <i class="bi bi-plus-circle"></i> Configurer maintenant
+                    </button>
+                </div>
+                }
+            </div>
+            } }
+
+        </main>
+    </div>
+</div>
+
+<!-- Modal Configuration -->
+<div class="modal-overlay" [class.show]="showModal" (click)="closeModal()">
+    <div class="modal-container modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-wordpress"></i> {{ hasConfig ? 'Modifier la configuration' : 'Ajouter une configuration' }}
+            </h3>
+            <button class="modal-close" (click)="closeModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <form [formGroup]="configForm" (ngSubmit)="onSubmit()" class="modal-form">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-link"></i> URL WordPress <span class="required">*</span>
+                    </label>
+                    <input type="url" formControlName="wp_url" class="form-control" placeholder="https://monsite.com" [class.is-invalid]="configForm.get('wp_url')?.invalid && configForm.get('wp_url')?.touched"> @if (configForm.get('wp_url')?.invalid &&
+                    configForm.get('wp_url')?.touched) {
+                    <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle"></i> URL WordPress valide requise (https://...)
+                    </div>
+                    }
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-person"></i> Nom d'utilisateur <span class="required">*</span>
+                    </label>
+                    <input type="text" formControlName="wp_username" class="form-control" placeholder="votre_nom_utilisateur" [class.is-invalid]="configForm.get('wp_username')?.invalid && configForm.get('wp_username')?.touched"> @if (configForm.get('wp_username')?.invalid
+                    && configForm.get('wp_username')?.touched) {
+                    <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle"></i> Nom d'utilisateur requis
+                    </div>
+                    }
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-key"></i> Application Password <span class="required">*</span>
+                    </label> @if (hasConfig) {
+                    <div class="form-hint">
+                        <i class="bi bi-info-circle"></i> Laissez vide pour conserver le mot de passe actuel
+                    </div>
+                    }
+                    <div class="password-input-wrapper">
+                        <input [type]="showPassword ? 'text' : 'password'" formControlName="wp_app_password" class="form-control" [class.is-invalid]="configForm.get('wp_app_password')?.invalid && configForm.get('wp_app_password')?.touched" placeholder="xxxx xxxx xxxx xxxx">
+                        <button type="button" class="password-toggle" (click)="showPassword = !showPassword">
+                            <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
+                        </button>
+                    </div>
+                    <div class="form-hint">
+                        <i class="bi bi-info-circle"></i> Le mot de passe d'application WordPress (format: "xxxx xxxx xxxx xxxx")
+                    </div>
+                    @if (configForm.get('wp_app_password')?.invalid && configForm.get('wp_app_password')?.touched) {
+                    <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle"></i> Mot de passe requis (minimum 10 caractères)
+                    </div>
+                    }
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" formControlName="test_connection">
+                        <span>Tester la connexion après l'enregistrement</span>
+                    </label>
+                </div>
+
+                @if (errorMessage) {
+                <div class="form-error">
+                    <i class="bi bi-exclamation-triangle-fill"></i> {{ errorMessage }}
+                </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" (click)="closeModal()">Annuler</button>
+                <button type="submit" class="btn-primary" [disabled]="isSubmitting || configForm.invalid">
+                    @if (isSubmitting) {
+                        <i class="bi bi-arrow-repeat spin"></i> Enregistrement...
+                    } @else {
+                        <i class="bi bi-save"></i> Enregistrer
+                    }
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

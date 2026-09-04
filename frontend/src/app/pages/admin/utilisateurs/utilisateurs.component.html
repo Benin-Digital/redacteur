@@ -1,0 +1,300 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" (click)="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1 class="page-title">Utilisateurs</h1>
+                    <span class="page-breadcrumb">Gestion des managers</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="btn-add" (click)="openAddModal()">
+                    <i class="bi bi-person-plus-fill"></i>
+                    <span>Nouveau manager</span>
+                </button>
+                <button class="refresh-btn" (click)="refreshData()" [disabled]="isLoading">
+                    <i class="bi bi-arrow-repeat" [class.spin]="isLoading"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement des managers...</p>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (errorMessage && !isLoading) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+                <button class="btn-retry" (click)="refreshData()">Réessayer</button>
+            </div>
+            }
+
+            <!-- Success Message -->
+            @if (successMessage && !isLoading) {
+            <div class="success-state">
+                <i class="bi bi-check-circle-fill"></i>
+                <p>{{ successMessage }}</p>
+            </div>
+            }
+
+            <!-- Data Display -->
+            @if (!isLoading && !errorMessage) {
+
+            <!-- Managers Table -->
+            <div class="card animate-in">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="bi bi-people-fill"></i> Tous les managers
+                    </h2>
+                    <div class="card-info">
+                        <span class="total-badge">{{ totalItems }} manager{{ totalItems > 1 ? 's' : '' }}</span>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Manager</th>
+                                <th>Email</th>
+                                <th>Statut</th>
+                                <th>Date de création</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (manager of managers; track manager.id) {
+                            <tr class="animate-row" [style.--delay]="($index * 0.03) + 's'">
+                                <td>
+                                    <div class="table-user">
+                                        <div class="table-avatar">
+                                            {{ getInitials(manager.name, manager.firstname) }}
+                                        </div>
+                                        <div class="table-info">
+                                            <div class="table-name">{{ manager.firstname }} {{ manager.name }}</div>
+                                            <div class="table-role">Manager</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="table-email-cell">{{ manager.email }}</td>
+                                <td>
+                                    <span class="status-badge" [class.status-active]="manager.is_active" [class.status-inactive]="!manager.is_active">
+                                        <i class="bi" [class.bi-check-circle-fill]="manager.is_active" [class.bi-x-circle-fill]="!manager.is_active"></i>
+                                        {{ manager.is_active ? 'Actif' : 'Inactif' }}
+                                    </span>
+                                </td>
+                                <td class="table-date">{{ manager.created_at | date:'dd/MM/yyyy' }}</td>
+                                <td class="table-actions">
+                                    <!-- Bouton Modifier -->
+                                    <button class="action-btn edit-btn" (click)="openEditModal(manager)" title="Modifier">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <!-- Bouton Activer/Désactiver -->
+                                    <button class="action-btn toggle-btn" [class.toggle-active]="manager.is_active" [class.toggle-inactive]="!manager.is_active" (click)="confirmToggleStatus(manager)" [title]="manager.is_active ? 'Désactiver' : 'Activer'">
+                                        <i class="bi" [class.bi-toggle-on]="manager.is_active" [class.bi-toggle-off]="!manager.is_active"></i>
+                                    </button>
+                                    <!-- Bouton Supprimer -->
+                                    <button class="action-btn delete-btn" (click)="confirmDelete(manager)" title="Supprimer">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            } @empty {
+                            <tr>
+                                <td colspan="5" class="empty-state">
+                                    <i class="bi bi-people"></i>
+                                    <p>Aucun manager trouvé</p>
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (lastPage > 1) {
+                <div class="pagination-wrapper">
+                    <div class="pagination">
+                        <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button> @for (page of pages; track page) {
+                        <button class="page-btn" [class.active]="page === currentPage" (click)="goToPage(page)">
+                            {{ page }}
+                        </button> }
+                        <button class="page-btn" [disabled]="currentPage === lastPage" (click)="goToPage(currentPage + 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="page-info">
+                        Page {{ currentPage }} sur {{ lastPage }} ({{ totalItems }} éléments)
+                    </div>
+                </div>
+                }
+            </div>
+
+            }
+
+        </main>
+    </div>
+</div>
+
+<!-- Modal Ajout/Modification -->
+<div class="modal-overlay" [class.show]="showModal" (click)="closeModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">{{ modalTitle }}</h3>
+            <button class="modal-close" (click)="closeModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <form [formGroup]="managerForm" (ngSubmit)="onSubmit()" class="modal-form">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="firstname" class="form-label">
+                        <i class="bi bi-person"></i> Prénom
+                    </label>
+                    <input type="text" id="firstname" formControlName="firstname" placeholder="Jean" class="form-control" [class.is-invalid]="managerForm.get('firstname')?.invalid && managerForm.get('firstname')?.touched"> @if (managerForm.get('firstname')?.invalid
+                    && managerForm.get('firstname')?.touched) {
+                    <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle"></i> Prénom invalide (lettres uniquement)
+                    </div>
+                    }
+                </div>
+
+                <div class="form-group">
+                    <label for="name" class="form-label">
+                        <i class="bi bi-person-badge"></i> Nom <span class="required">*</span>
+                    </label>
+                    <input type="text" id="name" formControlName="name" placeholder="Dupont" class="form-control" [class.is-invalid]="managerForm.get('name')?.invalid && managerForm.get('name')?.touched"> @if (managerForm.get('name')?.invalid && managerForm.get('name')?.touched)
+                    {
+                    <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle"></i> Nom requis (2-50 caractères, lettres uniquement)
+                    </div>
+                    }
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        <i class="bi bi-envelope"></i> Email <span class="required">*</span>
+                    </label>
+                    <input type="email" id="email" formControlName="email" placeholder="jean.dupont@email.com" class="form-control" [class.is-invalid]="managerForm.get('email')?.invalid && managerForm.get('email')?.touched"> @if (managerForm.get('email')?.invalid
+                    && managerForm.get('email')?.touched) {
+                    <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle"></i> Email valide requis
+                    </div>
+                    }
+                </div>
+
+                @if (errorMessage) {
+                <div class="form-error">
+                    <i class="bi bi-exclamation-triangle-fill"></i> {{ errorMessage }}
+                </div>
+                } @if (successMessage) {
+                <div class="form-success">
+                    <i class="bi bi-check-circle-fill"></i> {{ successMessage }}
+                </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" (click)="closeModal()">Annuler</button>
+                <button type="submit" class="btn-primary" [disabled]="isSubmitting || managerForm.invalid">
+                    @if (isSubmitting) {
+                        <i class="bi bi-arrow-repeat spin"></i> Chargement...
+                    } @else {
+                        <i class="bi" [class.bi-person-plus-fill]="!isEditing" [class.bi-pencil-square]="isEditing"></i>
+                        {{ isEditing ? 'Modifier' : 'Ajouter' }}
+                    }
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Confirmation Suppression -->
+<div class="modal-overlay" [class.show]="showDeleteConfirm" (click)="cancelDelete()">
+    <div class="modal-container modal-confirm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">Confirmer la suppression</h3>
+            <button class="modal-close" (click)="cancelDelete()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body confirm-body">
+            <div class="confirm-icon delete-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <p>Êtes-vous sûr de vouloir supprimer le manager</p>
+            <p class="confirm-name">{{ managerToDelete?.firstname }} {{ managerToDelete?.name }} ?</p>
+            <p class="confirm-warning">Cette action est irréversible.</p>
+        </div>
+        <div class="modal-footer confirm-footer">
+            <button class="btn-secondary" (click)="cancelDelete()">Annuler</button>
+            <button class="btn-danger" (click)="deleteManager()" [disabled]="isSubmitting">
+                @if (isSubmitting) {
+                    <i class="bi bi-arrow-repeat spin"></i> Suppression...
+                } @else {
+                    <i class="bi bi-trash3"></i> Supprimer
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmation Activation/Désactivation -->
+<div class="modal-overlay" [class.show]="showToggleConfirm" (click)="cancelToggleStatus()">
+    <div class="modal-container modal-confirm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">Confirmer le changement de statut</h3>
+            <button class="modal-close" (click)="cancelToggleStatus()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body confirm-body">
+            <div class="confirm-icon" [class.toggle-activate-icon]="!managerToToggle?.is_active" [class.toggle-deactivate-icon]="managerToToggle?.is_active">
+                <i class="bi" [class.bi-toggle-on]="managerToToggle?.is_active" [class.bi-toggle-off]="!managerToToggle?.is_active"></i>
+            </div>
+            <p>Êtes-vous sûr de vouloir</p>
+            <p class="confirm-name">
+                {{ managerToToggle?.is_active ? 'désactiver' : 'activer' }}
+                <strong>{{ managerToToggle?.firstname }} {{ managerToToggle?.name }}</strong> ?
+            </p>
+            <p class="confirm-warning">
+                {{ managerToToggle?.is_active ? 'Le manager ne pourra plus se connecter ni accéder à ses données.' : 'Le manager pourra à nouveau se connecter et accéder à ses données.' }}
+            </p>
+        </div>
+        <div class="modal-footer confirm-footer">
+            <button class="btn-secondary" (click)="cancelToggleStatus()">Annuler</button>
+            <button class="btn-confirm-toggle" (click)="executeToggleStatus()" [disabled]="isSubmitting">
+                @if (isSubmitting) {
+                    <i class="bi bi-arrow-repeat spin"></i> Chargement...
+                } @else {
+                    <i class="bi" [class.bi-toggle-on]="!managerToToggle?.is_active" [class.bi-toggle-off]="managerToToggle?.is_active"></i>
+                    {{ managerToToggle?.is_active ? 'Désactiver' : 'Activer' }}
+                }
+            </button>
+        </div>
+    </div>
+</div>

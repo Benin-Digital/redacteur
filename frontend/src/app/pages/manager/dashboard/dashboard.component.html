@@ -1,0 +1,210 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement de votre tableau de bord...</p>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (errorMessage && !isLoading) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+                <button class="btn-retry" (click)="refreshData()">Réessayer</button>
+            </div>
+            }
+
+            <!-- Data Display -->
+            @if (!isLoading && !errorMessage) {
+            <ng-container>
+
+                <!-- Welcome Banner -->
+                <section class="welcome-banner animate-in">
+                    <div class="welcome-text">
+                        <p class="welcome-greeting">{{ greeting }}, <strong>{{ firstName }}</strong> 👋</p>
+                        <p class="welcome-sub">Voici un aperçu de votre activité rédactionnelle</p>
+                    </div>
+                    <div class="welcome-actions">
+                        <a routerLink="/manager/sites" class="btn-primary-sm">
+                            <i class="bi bi-plus-circle"></i> Analyser un site
+                        </a>
+                        <a routerLink="/manager/redaction" class="btn-primary-sm">
+                            <i class="bi bi-magic"></i> Générer un article
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Stats -->
+                <section class="stats-grid">
+                    @for (stat of stats; track stat.label; let i = $index) {
+                    <div class="stat-card animate-in" [style.--delay]="(i * 0.07) + 's'" [class]="'stat-' + stat.color">
+                        <div class="stat-icon">
+                            <i [class]="'bi ' + stat.icon"></i>
+                        </div>
+                        <div class="stat-content">
+                            <span class="stat-value">{{ stat.value }}</span>
+                            <span class="stat-label">{{ stat.label }}</span>
+                            <span class="stat-sub">{{ stat.sub }}</span>
+                        </div>
+                        @if (stat.trend) {
+                        <div class="stat-trend">
+                            <i class="bi bi-arrow-up-short"></i>
+                            <span>{{ stat.trendValue }}</span>
+                        </div>
+                        }
+                    </div>
+                    }
+                </section>
+
+                <!-- Grid articles + sites -->
+                <div class="content-grid">
+
+                    <!-- Derniers articles -->
+                    <div class="card animate-in" style="--delay:0.2s">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i class="bi bi-file-text-fill"></i> Derniers articles
+                            </h2>
+                            <a routerLink="/manager/articles" class="card-link">Voir tous</a>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Titre</th>
+                                        <th>Site</th>
+                                        <th>Statut</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (article of recentArticles; track article.id) {
+                                    <tr class="animate-row" [style.--delay]="($index * 0.03) + 's'">
+                                        <td class="article-title-cell">
+                                            <div class="article-title">
+                                                <i class="bi bi-file-text"></i>
+                                                <span>{{ article.titre | slice:0:20 }}{{ article.titre.length > 50 ? '...' : '' }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="site-info-cell">
+                                            <div class="site-info">
+                                                <i class="bi bi-globe2"></i>
+                                                <span>{{ article.site_url }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="status-cell">
+                                            <span class="status-badge" [class]="getStatusClass(article.statut)">
+                                                <i class="bi" 
+                                                   [class.bi-pencil]="article.statut === 'brouillon'"
+                                                   [class.bi-calendar-check]="article.statut === 'programme'"
+                                                   [class.bi-check-circle-fill]="article.statut === 'publie'"></i>
+                                                {{ getStatusLabel(article.statut) }}
+                                            </span>
+                                        </td>
+                                        <td class="date-cell">{{ formatDate(article.created_at) }}</td>
+                                    </tr>
+                                    } @empty {
+                                    <tr>
+                                        <td colspan="4" class="empty-state">
+                                            <i class="bi bi-file-text"></i>
+                                            <p>Aucun article pour le moment</p>
+                                            <a routerLink="/manager/redaction" class="btn-link">Commencer la rédaction</a>
+                                        </td>
+                                    </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Derniers sites -->
+                    <div class="card animate-in" style="--delay:0.28s">
+                        <div class="card-header">
+                            <h2 class="card-title">
+                                <i class="bi bi-globe2"></i> Mes sites
+                            </h2>
+                            <a routerLink="/manager/sites" class="card-link">Voir tous</a>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>URL</th>
+                                        <th>Date d'analyse</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (site of recentSites; track site.id) {
+                                    <tr class="animate-row" [style.--delay]="($index * 0.03) + 's'">
+                                        <td class="site-url-cell">
+                                            <div class="site-url">
+                                                <i class="bi bi-link-45deg"></i>
+                                                <span>{{ site.url }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="date-cell">{{ formatDate(site.analyzed_at || site.created_at) }}</td>
+                                        <td class="actions-cell">
+                                            <a routerLink="/manager/redaction" [queryParams]="{ siteId: site.id }" class="action-btn generate-btn" title="Générer un article">
+                                                <i class="bi bi-magic"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    } @empty {
+                                    <tr>
+                                        <td colspan="3" class="empty-state">
+                                            <i class="bi bi-globe2"></i>
+                                            <p>Aucun site pour le moment</p>
+                                            <a routerLink="/manager/sites" class="btn-link">Analyser un site</a>
+                                        </td>
+                                    </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Actions rapides -->
+                <section class="quick-actions animate-in" style="--delay:0.35s">
+                    <h2 class="section-label">Actions rapides</h2>
+                    <div class="quick-grid">
+                        <a routerLink="/manager/sites" class="quick-card">
+                            <div class="quick-icon"><i class="bi bi-plus-circle"></i></div>
+                            <span>Nouveau site</span>
+                        </a>
+                        <a routerLink="/manager/redaction" class="quick-card">
+                            <div class="quick-icon"><i class="bi bi-magic"></i></div>
+                            <span>Générer un article</span>
+                        </a>
+                        <a routerLink="/manager/articles" class="quick-card">
+                            <div class="quick-icon"><i class="bi bi-file-text-fill"></i></div>
+                            <span>Mes articles</span>
+                        </a>
+                    </div>
+                </section>
+
+            </ng-container>
+            }
+
+        </main>
+    </div>
+</div>

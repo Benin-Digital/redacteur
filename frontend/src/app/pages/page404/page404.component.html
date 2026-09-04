@@ -1,0 +1,31 @@
+<div class="app-layout">
+    <div class="error-wrapper">
+        <div class="error-container">
+            <div class="error-content">
+                <div class="error-code">404</div>
+                <h1 class="error-title">Page non trouvée</h1>
+                <p class="error-message">
+                    Oups ! La page que vous recherchez semble introuvable.
+                </p>
+                <div class="error-actions">
+                    <a routerLink="/" class="btn-home">
+                        <i class="bi bi-house-door-fill"></i> Retour à l'accueil
+                    </a>
+                    <button class="btn-back" (click)="goBack()">
+                        <i class="bi bi-arrow-left"></i>
+                        Page précédente
+                    </button>
+                </div>
+            </div>
+            <div class="error-illustration">
+                <div class="illustration-icon">
+                    <i class="bi bi-compass"></i>
+                </div>
+                <div class="illustration-text">
+                    <span class="lost">Vous êtes perdu ?</span>
+                    <span class="help">Laissez-nous vous guider</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

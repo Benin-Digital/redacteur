@@ -1,0 +1,238 @@
+<!-- ============================================================
+     NAVBAR
+     ============================================================ -->
+<nav class="navbar" id="mainNavbar">
+    <div class="navbar-inner">
+        <!-- Logo seul à gauche -->
+        <div class="brand">
+            <img src="logo-benin-digital.png" alt="BENIN DIGITAL" class="brand-logo">
+        </div>
+
+        <!-- Boutons à droite -->
+        <div class="nav-actions">
+            <button class="btn-nav-ghost" (click)="scrollToSection('how-it-works')">
+                <i class="fa-solid fa-circle-play"></i>
+                Comment ça marche
+            </button>
+            <a href="/connexion" class="btn-nav-primary">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i> Se connecter
+            </a>
+        </div>
+
+        <!-- Menu mobile -->
+        <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Menu mobile déroulant -->
+    <div class="mobile-menu" [class.active]="mobileMenuOpen">
+        <button (click)="scrollToSection('how-it-works'); mobileMenuOpen = false">
+            <i class="fa-solid fa-circle-play"></i> Comment ça marche
+        </button>
+        <a href="/connexion" (click)="mobileMenuOpen = false">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Se connecter
+        </a>
+    </div>
+</nav>
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<section class="hero-section">
+    <div class="hero-bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+    </div>
+
+    <div class="hero-content">
+
+        <h1 class="hero-title animate-hero delay-1">
+            Générez et publiez<br> des articles SEO<br>
+            <span class="gradient-text">automatiquement.</span>
+        </h1>
+
+        <p class="hero-desc animate-hero delay-2">
+            Renseignez votre URL, laissez l'IA analyser votre ton éditorial, proposer des thèmes pertinents, rédiger des articles optimisés et les publier directement sur WordPress.
+        </p>
+
+        <div class="hero-cta animate-hero delay-3">
+            <a href="/connexion" class="btn-hero-primary">
+                Commencer maintenant
+                <i class="fa-solid fa-arrow-right"></i>
+            </a>
+            <button class="btn-hero-ghost" (click)="scrollToSection('how-it-works')">
+                <i class="fa-solid fa-play"></i>
+                Voir comment ça marche
+            </button>
+        </div>
+
+        <div class="hero-stats animate-hero delay-4">
+            <div class="stat">
+                <span class="stat-value">100%</span>
+                <span class="stat-label">Automatisé</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat">
+                <span class="stat-value">SEO</span>
+                <span class="stat-label">Optimisé</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat">
+                <span class="stat-value">WP</span>
+                <span class="stat-label">Compatible</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Illustration hero -->
+    <div class="hero-visual animate-hero delay-2">
+        <!-- Orbe centrale -->
+        <div class="orb-wrap">
+            <div class="ai-orb">
+                <div class="orb-inner">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+            </div>
+            <div class="orb-pulse"></div>
+            <div class="orb-ring"></div>
+        </div>
+
+        <!-- Cartes flottantes -->
+        <div class="card-float card-analysis">
+            <div class="cf-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+            <div class="cf-content">
+                <span class="cf-title">Analyse site</span>
+                <div class="cf-lines">
+                    <div class="cf-line long"></div>
+                    <div class="cf-line medium"></div>
+                </div>
+                <div class="cf-tags">
+                    <span class="cf-tag">SEO</span>
+                    <span class="cf-tag">Tech</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-float card-article">
+            <div class="cf-icon green"><i class="fa-solid fa-file-lines"></i></div>
+            <div class="cf-content">
+                <span class="cf-title">Article généré</span>
+                <div class="cf-lines">
+                    <div class="cf-line long"></div>
+                    <div class="cf-line medium"></div>
+                    <div class="cf-line short"></div>
+                </div>
+                <div class="cf-progress">
+                    <div class="cf-bar">
+                        <div class="cf-fill"></div>
+                    </div>
+                    <span class="cf-pct">85%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-float card-published">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Publié sur WordPress</span>
+        </div>
+
+        <div class="card-float card-schedule">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span>Programmé</span>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     HOW IT WORKS
+     ============================================================ -->
+<section class="how-section" id="how-it-works">
+    <div class="how-container">
+
+        <div class="section-header animate-on-scroll">
+            <h2 class="section-title">Comment ça marche ?</h2>
+            <p class="section-desc">
+                Trois étapes clés pour transformer votre URL en article publié sur votre site.
+            </p>
+        </div>
+
+        <div class="steps-grid">
+            @for (step of steps; track step.number; let i = $index) {
+            <div class="step-card animate-on-scroll" [style.--delay]="(i * 0.15) + 's'">
+                <div class="step-top">
+                    <span class="step-num">{{ step.number }}</span>
+                    <span class="step-badge">{{ step.badge }}</span>
+                </div>
+                <div class="step-icon-wrap">
+                    <i class="{{ step.icon }}"></i>
+                </div>
+                <h3 class="step-title">{{ step.title }}</h3>
+                <p class="step-desc">{{ step.description }}</p>
+                @if (i
+                < steps.length - 1) { <div class="step-arrow">
+                    <i class="bi bi-arrow-down"></i>
+            </div>
+            }
+        </div>
+        }
+    </div>
+
+    </div>
+</section>
+
+<!-- ============================================================
+     CTA FINAL
+     ============================================================ -->
+<section class="cta-section">
+    <div class="cta-content animate-on-scroll">
+        <h2 class="cta-title">Prêt à automatiser votre contenu ?</h2>
+        <p class="cta-desc">Connectez-vous et commencez à générer vos articles SEO dès maintenant.</p>
+        <a href="/connexion" class="btn-cta">
+            Accéder à la plateforme
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </div>
+</section>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer class="site-footer">
+    <div class="footer-inner">
+        <!-- Logo + texte centrés -->
+        <div class="footer-brand">
+            <img src="logo-benin-digital.png" alt="BENIN DIGITAL" class="footer-logo">
+            <div class="footer-company">
+                <p class="company-tagline">Votre partenaire pour la transformation digitale</p>
+            </div>
+        </div>
+
+        <!-- Liens -->
+        <div class="footer-links">
+            <div class="footer-links-group">
+                <h4>Plateforme</h4>
+                <a href="#how-it-works" (click)="scrollToSection('how-it-works'); $event.preventDefault()">Comment ça marche</a>
+                <a href="#">Documentation</a>
+                <a href="/connexion">Se connecter</a>
+            </div>
+            <div class="footer-links-group">
+                <h4>Entreprise</h4>
+                <a href="#">À propos</a>
+                <a href="#">Contact</a>
+                <a href="#">Blog</a>
+            </div>
+            <div class="footer-links-group">
+                <h4>Légal</h4>
+                <a href="#">Confidentialité</a>
+                <a href="#">CGU</a>
+                <a href="#">Mentions légales</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <p class="footer-copyright">© 2026 BENIN DIGITAL — Business & IT Transformation</p>
+        <p class="footer-address">lot 85, rue 12.200. Haie Vive, Cotonou. Bénin</p>
+    </div>
+</footer>

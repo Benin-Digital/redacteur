@@ -1,0 +1,367 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" (click)="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1 class="page-title">Clés API</h1>
+                    <span class="page-breadcrumb">Gérez les clés d'accès aux modèles d'IA</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="btn-add" (click)="openCreateModal()">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Ajouter une clé</span>
+                </button>
+                <button class="refresh-btn" (click)="refreshData()" [disabled]="isLoading">
+                    <i class="bi bi-arrow-repeat" [class.spin]="isLoading"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement des clés API...</p>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (errorMessage && !isLoading) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+                <button class="btn-retry" (click)="refreshData()">Réessayer</button>
+            </div>
+            }
+
+            <!-- Success Message -->
+            @if (successMessage && !isLoading) {
+            <div class="success-state">
+                <i class="bi bi-check-circle-fill"></i>
+                <p>{{ successMessage }}</p>
+            </div>
+            }
+
+            <!-- Data Display -->
+            @if (!isLoading && !errorMessage) {
+
+            <!-- Configuration active -->
+            @if (activeConfig) {
+            <div class="active-config-card animate-in">
+                <div class="active-config-icon">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div class="active-config-content">
+                    <div class="active-config-title">Configuration active</div>
+                    <div class="active-config-details">
+                        <span class="config-provider">{{ activeConfig.provider }}</span>
+                        <span class="config-model">{{ activeConfig.model_name }}</span>
+                    </div>
+                </div>
+            </div>
+            } @else {
+            <div class="warning-card animate-in">
+                <div class="warning-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <div class="warning-content">
+                    <div class="warning-title">Aucune configuration active</div>
+                    <div class="warning-text">Veuillez activer une clé API pour que l'agent Python puisse fonctionner.
+                    </div>
+                </div>
+            </div>
+            }
+
+            <!-- Table -->
+            <div class="card animate-in">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="bi bi-key-fill"></i> Clés API configurées
+                    </h2>
+                    <div class="card-info">
+                        <span class="total-badge">{{ apiKeys.length }} clé{{ apiKeys.length > 1 ? 's' : '' }}</span>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Fournisseur</th>
+                                <th>Clé API</th>
+                                <th>Modèle</th>
+                                <th>Capacités</th>
+                                <th>Statut</th>
+                                <th>Créée le</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (key of apiKeys; track key.id) {
+                            <tr class="animate-row" [style.--delay]="($index * 0.03) + 's'">
+                                <td class="provider-cell">
+                                    <div class="provider-info">
+                                        <i [class]="'bi ' + getProviderIcon(key.provider)"></i>
+                                        <span>{{ getProviderLabel(key.provider) }}</span>
+                                    </div>
+                                </td>
+                                <td class="key-cell">
+                                    <code class="key-masked">{{ key.api_key_masked }}</code>
+                                </td>
+                                <td>{{ key.model_name || '-' }}</td>
+                                <td>
+                                    <div class="capabilities-badges">
+                                        @if (key.capabilities?.includes('text_generation')) {
+                                        <span class="cap-badge text">Texte</span> } @if (key.capabilities?.includes('image_generation')) {
+                                        <span class="cap-badge image">Image</span> } @if (key.capabilities?.includes('video_generation')) {
+                                        <span class="cap-badge video">Vidéo</span> } @if (key.capabilities?.includes('audio_generation')) {
+                                        <span class="cap-badge audio">Audio</span> } @if (!key.capabilities || key.capabilities.length === 0) {
+                                        <span class="cap-badge none">Aucune</span> }
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-badge" [class.active]="key.is_active" [class.inactive]="!key.is_active">
+                                        <i class="bi" [class.bi-check-circle]="key.is_active"
+                                            [class.bi-circle]="!key.is_active"></i>
+                                        {{ key.is_active ? 'Actif' : 'Inactif' }}
+                                    </span>
+                                </td>
+                                <td class="date-cell">{{ formatDate(key.created_at) }}</td>
+                                <td class="table-actions">
+                                    <button class="action-btn test-btn" (click)="testApiKey(key)" title="Tester la connexion">
+                                        <i class="bi bi-plug"></i>
+                                    </button>
+                                    <button class="action-btn edit-btn" (click)="openEditModal(key)" title="Modifier">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="action-btn delete-btn" (click)="confirmDelete(key)" title="Supprimer">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            } @empty {
+                            <tr>
+                                <td colspan="7" class="empty-state">
+                                    <i class="bi bi-key"></i>
+                                    <p>Aucune clé API configurée</p>
+                                    <button class="btn-empty-add" (click)="openCreateModal()">
+                                        <i class="bi bi-plus-circle"></i> Ajouter une clé API
+                                    </button>
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (lastPage > 1) {
+                <div class="pagination-wrapper">
+                    <div class="pagination">
+                        <button class="page-btn" [disabled]="currentPage === 1" (click)="goToPage(currentPage - 1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button> @for (page of pages; track page) {
+                        <button class="page-btn" [class.active]="page === currentPage" (click)="goToPage(page)">
+                            {{ page }}
+                        </button> }
+                        <button class="page-btn" [disabled]="currentPage === lastPage" (click)="goToPage(currentPage + 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="page-info">
+                        Page {{ currentPage }} sur {{ lastPage }} ({{ totalItems }} éléments)
+                    </div>
+                </div>
+                }
+            </div>
+
+            }
+
+        </main>
+    </div>
+</div>
+
+<!-- Modal Ajout/Édition -->
+<div class="modal-overlay" [class.show]="showModal" (click)="closeModal()">
+    <div class="modal-container modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi" [class.bi-plus-circle]="!isEditing" [class.bi-pencil-square]="isEditing"></i> {{ isEditing ? 'Modifier la clé API' : 'Ajouter une clé API' }}
+            </h3>
+            <button class="modal-close" (click)="closeModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <form [formGroup]="keyForm" (ngSubmit)="onSubmit()" class="modal-form">
+            <div class="modal-body">
+                <!-- Fournisseur -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-box"></i> Fournisseur <span class="required">*</span>
+                    </label>
+                    <select formControlName="provider" class="form-select" (change)="onProviderChange()">
+                        @for (p of providers; track p.value) {
+                        <option [value]="p.value">{{ p.label }}</option>
+                        }
+                        <!-- SUPPRIME CES 3 LIGNES CI-DESSOUS -->
+                        <!-- <option value="custom">Autre (personnalisé)</option> -->
+                    </select>
+                </div>
+
+                <!-- Nom du fournisseur personnalisé -->
+                @if (showCustomProvider) {
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-tag"></i> Nom du fournisseur <span class="required">*</span>
+                    </label>
+                    <input type="text" formControlName="custom_provider_name" class="form-control" placeholder="Ex: groq, cohere, perplexity, fireworks..." [class.is-invalid]="keyForm.get('custom_provider_name')?.invalid && keyForm.get('custom_provider_name')?.touched">
+                    <div class="form-hint">
+                        <i class="bi bi-info-circle"></i> Entrez le nom du nouveau fournisseur (ex: groq, cohere, etc.)
+                    </div>
+                    @if (keyForm.get('custom_provider_name')?.invalid && keyForm.get('custom_provider_name')?.touched) {
+                    <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle"></i> Le nom du fournisseur est requis
+                    </div>
+                    }
+                </div>
+                }
+
+                <!-- Clé API -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-key"></i> Clé API <span class="required">*</span>
+                    </label> @if (isEditing) {
+                    <div class="form-hint">
+                        <i class="bi bi-info-circle"></i> Laissez vide pour conserver la clé actuelle
+                    </div>
+                    }
+                    <div class="password-input-wrapper">
+                        <input [type]="showApiKey ? 'text' : 'password'" formControlName="api_key" class="form-control" [class.is-invalid]="keyForm.get('api_key')?.invalid && keyForm.get('api_key')?.touched" placeholder="sk-...">
+                        <button type="button" class="password-toggle" (click)="showApiKey = !showApiKey">
+                            <i class="bi" [class.bi-eye]="!showApiKey" [class.bi-eye-slash]="showApiKey"></i>
+                        </button>
+                    </div>
+                    @if (keyForm.get('api_key')?.invalid && keyForm.get('api_key')?.touched) {
+                    <div class="invalid-feedback">
+                        <i class="bi bi-exclamation-circle"></i> Clé API requise (minimum 10 caractères)
+                    </div>
+                    }
+                </div>
+
+                <!-- Nom du modèle -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-cpu"></i> Nom du modèle
+                    </label>
+                    <input type="text" formControlName="model_name" class="form-control" placeholder="Ex: gpt-4o, mistral-large-latest">
+                    <div class="form-hint">
+                        <i class="bi bi-info-circle"></i> Le nom du modèle est automatiquement suggéré selon le fournisseur. Vous pouvez le modifier si nécessaire.
+                    </div>
+                </div>
+
+                <!-- Capabilities -->
+                <div class="form-group" formGroupName="capabilities">
+                    <label class="form-label">
+                        <i class="bi bi-list-check"></i> Capacités <span class="required">*</span>
+                    </label>
+                    <div class="capabilities-grid">
+                        <label class="capability-option">
+                            <input type="checkbox" formControlName="text">
+                            <span>Génération de texte</span>
+                        </label>
+                        <label class="capability-option">
+                            <input type="checkbox" formControlName="image">
+                            <span>Génération d'images</span>
+                        </label>
+                        <label class="capability-option">
+                            <input type="checkbox" formControlName="video">
+                            <span>Génération de vidéos</span>
+                        </label>
+                        <label class="capability-option">
+                            <input type="checkbox" formControlName="audio">
+                            <span>Génération audio</span>
+                        </label>
+                    </div>
+                    <div class="form-hint">
+                        <i class="bi bi-info-circle"></i> Sélectionnez les capacités supportées par ce provider
+                    </div>
+                </div>
+
+                <!-- Actif -->
+                <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" formControlName="is_active">
+                        <span>Activer cette clé</span>
+                    </label>
+                    <div class="form-hint">
+                        <i class="bi bi-info-circle"></i> Plusieurs clés peuvent être actives simultanément selon leurs capacités
+                    </div>
+                </div>
+
+                @if (errorMessage) {
+                <div class="form-error">
+                    <i class="bi bi-exclamation-triangle-fill"></i> {{ errorMessage }}
+                </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" (click)="closeModal()">Annuler</button>
+                <button type="submit" class="btn-primary" [disabled]="isSubmitting || keyForm.invalid">
+                    @if (isSubmitting) {
+                    <i class="bi bi-arrow-repeat spin"></i> Enregistrement...
+                    } @else {
+                    <i class="bi bi-save"></i> Enregistrer
+                    }
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Confirmation Suppression -->
+<div class="modal-overlay" [class.show]="showDeleteConfirm" (click)="cancelDelete()">
+    <div class="modal-container modal-confirm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">Confirmer la suppression</h3>
+            <button class="modal-close" (click)="cancelDelete()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body confirm-body">
+            <div class="confirm-icon delete-icon">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <p>Êtes-vous sûr de vouloir supprimer la clé API</p>
+            <p class="confirm-name">{{ getProviderLabel(keyToDelete?.provider || '') }} ?</p>
+            <p class="confirm-warning">Cette action est irréversible.</p>
+        </div>
+        <div class="modal-footer confirm-footer">
+            <button class="btn-secondary" (click)="cancelDelete()">Annuler</button>
+            <button class="btn-danger" (click)="deleteApiKey()" [disabled]="isSubmitting">
+                @if (isSubmitting) {
+                <i class="bi bi-arrow-repeat spin"></i> Suppression...
+                } @else {
+                <i class="bi bi-trash3"></i> Supprimer
+                }
+            </button>
+        </div>
+    </div>
+</div>

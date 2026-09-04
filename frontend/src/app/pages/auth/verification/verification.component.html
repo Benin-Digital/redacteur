@@ -1,0 +1,142 @@
+<div class="verify-page">
+    <!-- Section gauche - Présentation institutionnelle (identique à connexion) -->
+    <div class="institution-section">
+        <div class="institution-content">
+            <!-- Logo BENIN DIGITAL -->
+            <div class="company-logo">
+                <img src="logo-benin-digital.png" alt="BENIN DIGITAL" class="company-logo-img">
+            </div>
+
+            <div class="institution-text">
+                <h1 class="institution-title">
+                    <span class="highlight">Agent IA</span> Rédaction Web
+                </h1>
+                <h2 class="institution-subtitle">
+                    Automatisation SEO
+                </h2>
+                <p class="institution-description">
+                    Générez automatiquement des articles optimisés pour le référencement, adaptés à votre ligne éditoriale et programmés selon votre calendrier.
+                </p>
+            </div>
+
+            <!-- Caractéristiques -->
+            <div class="features-list">
+                <div class="feature-item">
+                    <i class="bi bi-robot"></i>
+                    <span>IA puissante (LLM)</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-globe"></i>
+                    <span>Analyse de site automatique</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-calendar"></i>
+                    <span>Programmation de contenu</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-shield-check"></i>
+                    <span>Données sécurisées</span>
+                </div>
+            </div>
+
+            <!-- Footer institutionnel -->
+            <div class="institution-footer">
+                <p class="institution-name">BENIN DIGITAL</p>
+                <p class="institution-location">Entreprise de Services du Numérique</p>
+                <p class="institution-slogan">Transformez votre présence digitale</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section droite - Formulaire de vérification -->
+    <div class="verification-section">
+        <div class="verification-wrapper">
+            <div class="form-header">
+                <div class="back-home">
+                    <a (click)="goToLogin()" class="back-link">
+                        <i class="bi bi-arrow-left"></i> Retour à la connexion
+                    </a>
+                </div>
+                <div class="form-title-container">
+                    <div class="form-icon">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+                    <h2 class="form-title">Vérification</h2>
+                    <p class="form-subtitle">Entrez le code reçu par email</p>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div *ngIf="successMessage" class="alert-message success">
+                <i class="bi bi-check-circle-fill"></i>
+                <div class="alert-content">
+                    <strong>Succès</strong>
+                    <p>{{ successMessage }}</p>
+                </div>
+            </div>
+
+            <div *ngIf="errorMessage" class="alert-message error">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div class="alert-content">
+                    <strong>Erreur</strong>
+                    <p>{{ errorMessage }}</p>
+                </div>
+            </div>
+
+            <!-- Formulaire -->
+            <form [formGroup]="verificationForm" (ngSubmit)="onSubmit()" class="verification-form">
+
+                <div class="form-group">
+                    <label for="code" class="form-label">
+                        <i class="bi bi-key"></i>
+                        Code à 6 chiffres
+                        <span class="required">*</span>
+                    </label>
+                    <div class="input-group">
+                        <input type="text" id="code" formControlName="code" placeholder="123456" maxlength="6" inputmode="numeric" autocomplete="one-time-code" [class.error]="submitted && f['code'].invalid" (input)="clearMessages(); onCodeInput($event)" [disabled]="isLoading || isExpired"
+                        />
+                        <div class="input-icon">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                    </div>
+                    <div class="error-message" *ngIf="submitted && f['code'].invalid">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span *ngIf="f['code'].errors?.['required']">Le code est obligatoire</span>
+                        <span *ngIf="f['code'].errors?.['minlength'] || f['code'].errors?.['maxlength']">Le code doit contenir 6 chiffres</span>
+                        <span *ngIf="f['code'].errors?.['pattern']">Le code doit contenir uniquement des chiffres</span>
+                    </div>
+                </div>
+
+                <!-- Informations sur le code -->
+                <div class="info-note">
+                    <i class="bi bi-info-circle"></i>
+                    <p>
+                        Un code à 6 chiffres vous a été envoyé par email.
+                        <a (click)="resendCode()" class="resend-link" [class.disabled]="isLoading || !isExpired">
+                            Renvoyer le code
+                        </a>
+                    </p>
+                </div>
+
+                <!-- Bouton de vérification -->
+                <button type="submit" class="verification-button" [disabled]="isLoading || isExpired">
+                    <span *ngIf="!isLoading">
+                        <i class="bi bi-check-circle"></i> Vérifier
+                    </span>
+                    <span *ngIf="isLoading" class="loading-spinner">
+                        <i class="bi bi-arrow-repeat spin"></i>
+                        Vérification en cours...
+                    </span>
+                </button>
+
+                <!-- Note de sécurité -->
+                <div class="security-note">
+                    <i class="bi bi-info-circle"></i>
+                    <p>
+                        <strong>Accès sécurisé</strong> — Le code est valable 10 minutes.
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

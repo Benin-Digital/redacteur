@@ -1,0 +1,228 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" (click)="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1 class="page-title">Paramètres</h1>
+                    <span class="page-breadcrumb">Gérez les paramètres de votre compte</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="refresh-btn" (click)="refreshData()" [disabled]="isLoading">
+                    <i class="bi bi-arrow-repeat" [class.spin]="isLoading"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement de vos informations...</p>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (errorMessage && !isLoading) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+                <button class="btn-retry" (click)="refreshData()">Réessayer</button>
+            </div>
+            }
+
+            <!-- Success Message -->
+            @if (successMessage && !isLoading) {
+            <div class="success-state">
+                <i class="bi bi-check-circle-fill"></i>
+                <p>{{ successMessage }}</p>
+            </div>
+            }
+
+            <!-- Data Display -->
+            @if (!isLoading && !errorMessage) {
+
+            <!-- Paramètres Grid -->
+            <div class="settings-grid">
+
+                <!-- Carte Profil -->
+                <div class="settings-card animate-in" style="--delay:0.1s">
+                    <div class="settings-card-header">
+                        <div class="settings-card-icon">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <h2 class="settings-card-title">Mon profil</h2>
+                        <p class="settings-card-subtitle">Modifiez vos informations personnelles</p>
+                    </div>
+
+                    <form [formGroup]="profileForm" (ngSubmit)="onSubmitProfile()" class="settings-form">
+                        <div class="form-group">
+                            <label for="firstname" class="form-label">
+                                <i class="bi bi-person"></i> Prénom
+                            </label>
+                            <input type="text" id="firstname" formControlName="firstname" placeholder="Votre prénom" class="form-control" [class.is-invalid]="pf['firstname'].invalid && pf['firstname'].touched"> @if (pf['firstname'].invalid && pf['firstname'].touched)
+                            {
+                            <div class="invalid-feedback">
+                                <i class="bi bi-exclamation-circle"></i> Prénom invalide (lettres uniquement)
+                            </div>
+                            }
+                        </div>
+
+                        <div class="form-group">
+                            <label for="name" class="form-label">
+                                <i class="bi bi-person-badge"></i> Nom <span class="required">*</span>
+                            </label>
+                            <input type="text" id="name" formControlName="name" placeholder="Votre nom" class="form-control" [class.is-invalid]="pf['name'].invalid && pf['name'].touched"> @if (pf['name'].invalid && pf['name'].touched) {
+                            <div class="invalid-feedback">
+                                <i class="bi bi-exclamation-circle"></i> Nom requis (2-50 caractères, lettres uniquement)
+                            </div>
+                            }
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email" class="form-label">
+                                <i class="bi bi-envelope"></i> Email <span class="required">*</span>
+                            </label>
+                            <input type="email" id="email" formControlName="email" placeholder="votre@email.com" class="form-control" [class.is-invalid]="pf['email'].invalid && pf['email'].touched"> @if (pf['email'].invalid && pf['email'].touched) {
+                            <div class="invalid-feedback">
+                                <i class="bi bi-exclamation-circle"></i> Email valide requis
+                            </div>
+                            }
+                        </div>
+
+                        <button type="submit" class="btn-primary" [disabled]="isSubmittingProfile || profileForm.pristine">
+                            @if (isSubmittingProfile) {
+                                <i class="bi bi-arrow-repeat spin"></i> Enregistrement...
+                            } @else {
+                                 Enregistrer les modifications
+                            }
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Carte Mot de passe -->
+                <div class="settings-card animate-in" style="--delay:0.2s">
+                    <div class="settings-card-header">
+                        <div class="settings-card-icon">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h2 class="settings-card-title">Sécurité</h2>
+                        <p class="settings-card-subtitle">Modifiez votre mot de passe</p>
+                    </div>
+
+                    <form [formGroup]="passwordForm" (ngSubmit)="onSubmitPassword()" class="settings-form">
+                        <div class="form-group">
+                            <label for="current_password" class="form-label">
+                                <i class="bi bi-lock"></i> Mot de passe actuel <span class="required">*</span>
+                            </label>
+                            <div class="password-input-wrapper">
+                                <input [type]="showCurrentPassword ? 'text' : 'password'" id="current_password" formControlName="current_password" placeholder="••••••••" class="form-control" [class.is-invalid]="pwf['current_password'].invalid && pwf['current_password'].touched">
+                                <button type="button" class="password-toggle" (click)="toggleCurrentPassword()">
+                                    <i class="bi" [class.bi-eye]="!showCurrentPassword" [class.bi-eye-slash]="showCurrentPassword"></i>
+                                </button>
+                            </div>
+                            @if (pwf['current_password'].invalid && pwf['current_password'].touched) {
+                            <div class="invalid-feedback">
+                                <i class="bi bi-exclamation-circle"></i> Le mot de passe actuel est requis
+                            </div>
+                            }
+                        </div>
+
+                        <div class="form-group">
+                            <label for="new_password" class="form-label">
+                                <i class="bi bi-key"></i> Nouveau mot de passe <span class="required">*</span>
+                            </label>
+                            <div class="password-input-wrapper">
+                                <input [type]="showNewPassword ? 'text' : 'password'" id="new_password" formControlName="new_password" placeholder="••••••••" class="form-control" [class.is-invalid]="pwf['new_password'].invalid && pwf['new_password'].touched">
+                                <button type="button" class="password-toggle" (click)="toggleNewPassword()">
+                                    <i class="bi" [class.bi-eye]="!showNewPassword" [class.bi-eye-slash]="showNewPassword"></i>
+                                </button>
+                            </div>
+
+                            <!-- Critères du mot de passe -->
+                            @if (pwf['new_password'].touched) {
+                            <div class="password-requirements">
+                                <p class="requirements-title">Le mot de passe doit contenir :</p>
+                                <ul>
+                                    <li [class.valid]="!pwf['new_password'].errors?.['minlength']">
+                                        <i class="bi" [class.bi-check-circle-fill]="!pwf['new_password'].errors?.['minlength']" [class.bi-circle]="pwf['new_password'].errors?.['minlength']"></i> Au moins 10 caractères
+                                    </li>
+                                    <li [class.valid]="!pwf['new_password'].errors?.['noUpperCase']">
+                                        <i class="bi" [class.bi-check-circle-fill]="!pwf['new_password'].errors?.['noUpperCase']" [class.bi-circle]="pwf['new_password'].errors?.['noUpperCase']"></i> Au moins une majuscule
+                                    </li>
+                                    <li [class.valid]="!pwf['new_password'].errors?.['noLowerCase']">
+                                        <i class="bi" [class.bi-check-circle-fill]="!pwf['new_password'].errors?.['noLowerCase']" [class.bi-circle]="pwf['new_password'].errors?.['noLowerCase']"></i> Au moins une minuscule
+                                    </li>
+                                    <li [class.valid]="!pwf['new_password'].errors?.['noDigit']">
+                                        <i class="bi" [class.bi-check-circle-fill]="!pwf['new_password'].errors?.['noDigit']" [class.bi-circle]="pwf['new_password'].errors?.['noDigit']"></i> Au moins un chiffre
+                                    </li>
+                                    <li [class.valid]="!pwf['new_password'].errors?.['noSpecialChar']">
+                                        <i class="bi" [class.bi-check-circle-fill]="!pwf['new_password'].errors?.['noSpecialChar']" [class.bi-circle]="pwf['new_password'].errors?.['noSpecialChar']"></i> Au moins un caractère spécial (&#64;$!%*?&)
+                                    </li>
+                                </ul>
+                            </div>
+                            }
+                        </div>
+
+                        <div class="form-group">
+                            <label for="new_password_confirmation" class="form-label">
+                                <i class="bi bi-check-circle"></i> Confirmer le mot de passe <span class="required">*</span>
+                            </label>
+                            <div class="password-input-wrapper">
+                                <input [type]="showConfirmPassword ? 'text' : 'password'" id="new_password_confirmation" formControlName="new_password_confirmation" placeholder="••••••••" class="form-control" [class.is-invalid]="passwordForm.errors?.['mismatch'] && pwf['new_password_confirmation'].touched">
+                                <button type="button" class="password-toggle" (click)="toggleConfirmPassword()">
+                                    <i class="bi" [class.bi-eye]="!showConfirmPassword" [class.bi-eye-slash]="showConfirmPassword"></i>
+                                </button>
+                            </div>
+                            @if (passwordForm.errors?.['mismatch'] && pwf['new_password_confirmation'].touched) {
+                            <div class="invalid-feedback">
+                                <i class="bi bi-exclamation-circle"></i> Les mots de passe ne correspondent pas
+                            </div>
+                            }
+                        </div>
+
+                        <button type="submit" class="btn-primary btn-security" [disabled]="isSubmittingPassword || passwordForm.invalid">
+                            @if (isSubmittingPassword) {
+                                <i class="bi bi-arrow-repeat spin"></i> Changement en cours...
+                            } @else {
+                                 Changer le mot de passe
+                            }
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Informations supplémentaires -->
+            <div class="info-card animate-in" style="--delay:0.3s">
+                <div class="info-icon">
+                    <i class="bi bi-info-circle-fill"></i>
+                </div>
+                <div class="info-content">
+                    <h4>Bonnes pratiques de sécurité</h4>
+                    <p>Utilisez un mot de passe unique et complexe, ne le partagez jamais avec personne. Un mot de passe fort contient au moins 10 caractères, avec des majuscules, minuscules, chiffres et caractères spéciaux.</p>
+                </div>
+            </div>
+
+            }
+
+        </main>
+    </div>
+</div>

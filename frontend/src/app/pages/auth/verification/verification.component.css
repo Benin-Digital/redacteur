@@ -1,0 +1,553 @@
+/* ============================================================
+   Variables (couleurs BENIN DIGITAL)
+   ============================================================ */
+
+:host {
+    --primary: #28b188;
+    --primary-dark: #1e8a6a;
+    --primary-light: #8ece4e;
+    --white: #ffffff;
+    --gray-50: #f8faf8;
+    --gray-100: #f0f4f0;
+    --gray-200: #e2e8e2;
+    --gray-300: #cbd5cb;
+    --gray-400: #94a394;
+    --gray-600: #6a7a6a;
+    --gray-800: #1a2a1a;
+    --danger: #dc3545;
+    --success: #10b981;
+    --border-radius: 12px;
+}
+
+
+/* ============================================================
+   Page principale
+   ============================================================ */
+
+.verify-page {
+    display: flex;
+    min-height: 100vh;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--white);
+    overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+    .verify-page {
+        flex-direction: column;
+        height: auto;
+        overflow-y: auto;
+    }
+}
+
+
+/* ============================================================
+   Section institutionnelle (gauche) - IDENTIQUE À CONNEXION
+   ============================================================ */
+
+.institution-section {
+    flex: 0 0 45%;
+    background: linear-gradient(135deg, var(--white) 0%, var(--gray-100) 100%);
+    padding: 2rem 1.5rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 1024px) {
+    .institution-section {
+        flex: none;
+        width: 100%;
+        padding: 1.5rem 1rem;
+    }
+}
+
+.institution-section .institution-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+
+/* Logo */
+
+.institution-section .company-logo {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.institution-section .company-logo-img {
+    max-width: 100px;
+    height: auto;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+
+/* Texte institutionnel */
+
+.institution-section .institution-text {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.institution-section .institution-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+}
+
+.institution-section .institution-title .highlight {
+    background: var(--primary-dark);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.institution-section .institution-subtitle {
+    font-size: 1rem;
+    color: var(--gray-600);
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.institution-section .institution-description {
+    font-size: 0.9rem;
+    color: var(--gray-600);
+    line-height: 1.5;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+
+/* Liste des caractéristiques */
+
+.institution-section .features-list {
+    margin: 1.5rem 0;
+}
+
+.institution-section .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.institution-section .feature-item i {
+    color: var(--primary);
+    font-size: 1.1rem;
+    width: 24px;
+}
+
+.institution-section .feature-item span {
+    font-size: 0.9rem;
+    color: var(--gray-600);
+}
+
+
+/* Footer institutionnel */
+
+.institution-section .institution-footer {
+    margin-top: auto;
+    text-align: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--gray-200);
+}
+
+.institution-section .institution-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: 0.25rem;
+}
+
+.institution-section .institution-location,
+.institution-section .institution-slogan {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+    margin: 0;
+}
+
+
+/* ============================================================
+   Section vérification (droite) - IDENTIQUE À CONNEXION
+   ============================================================ */
+
+.verification-section {
+    flex: 0 0 55%;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+}
+
+@media (max-width: 1024px) {
+    .verification-section {
+        flex: none;
+        width: 100%;
+        padding: 1.5rem 1rem;
+    }
+}
+
+.verification-section .verification-wrapper {
+    width: 100%;
+    max-width: 420px;
+    padding: 1rem;
+}
+
+@media (max-width: 768px) {
+    .verification-section .verification-wrapper {
+        padding: 0.5rem;
+        max-width: 380px;
+    }
+}
+
+
+/* En-tête du formulaire */
+
+.verification-section .form-header {
+    margin-bottom: 2rem;
+}
+
+.verification-section .back-home {
+    margin-bottom: 1rem;
+}
+
+.verification-section .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--gray-600);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.verification-section .back-link:hover {
+    color: var(--primary);
+}
+
+.verification-section .form-title-container .form-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(40, 177, 136, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.verification-section .form-title-container .form-icon i {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.verification-section .form-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin-bottom: 0.25rem;
+}
+
+.verification-section .form-subtitle {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+
+/* Formulaire */
+
+.verification-section .verification-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.verification-section .verification-form .form-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+}
+
+.verification-section .verification-form .form-label i {
+    color: var(--primary);
+    font-size: 0.85rem;
+}
+
+.verification-section .verification-form .form-label .required {
+    color: var(--danger);
+    margin-left: 0.15rem;
+}
+
+.verification-section .verification-form .input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.verification-section .verification-form .input-group input {
+    width: 100%;
+    padding: 0.85rem 1rem 0.85rem 2.5rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    font-size: 1.2rem;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    letter-spacing: 0.5rem;
+    transition: all 0.2s ease;
+    background: var(--gray-50);
+}
+
+.verification-section .verification-form .input-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(40, 177, 136, 0.1);
+    background: var(--white);
+}
+
+.verification-section .verification-form .input-group input.error {
+    border-color: var(--danger);
+}
+
+.verification-section .verification-form .input-group input::placeholder {
+    color: var(--gray-400);
+    font-size: 0.9rem;
+    letter-spacing: 0.1rem;
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+.verification-section .verification-form .input-group input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.verification-section .verification-form .input-group .input-icon {
+    position: absolute;
+    left: 0.85rem;
+    color: var(--gray-400);
+    font-size: 1rem;
+}
+
+.verification-section .verification-form .error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--danger);
+}
+
+.verification-section .verification-form .error-message i {
+    font-size: 0.7rem;
+}
+
+
+/* Note d'information */
+
+.verification-section .verification-form .info-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    background: rgba(40, 177, 136, 0.05);
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+}
+
+.verification-section .verification-form .info-note i {
+    color: var(--primary);
+    font-size: 0.9rem;
+    margin-top: 0.1rem;
+}
+
+.verification-section .verification-form .info-note p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--gray-600);
+    line-height: 1.4;
+}
+
+.verification-section .verification-form .info-note .resend-link {
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.verification-section .verification-form .info-note .resend-link:hover:not(.disabled) {
+    text-decoration: underline;
+}
+
+.verification-section .verification-form .info-note .resend-link.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* Bouton de vérification */
+
+.verification-section .verification-form .verification-button {
+    width: 100%;
+    padding: 1rem;
+    background: var(--primary-dark);
+    color: var(--white);
+    border: none;
+    border-radius: 40px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.verification-section .verification-form .verification-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(40, 177, 136, 0.3);
+}
+
+.verification-section .verification-form .verification-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.verification-section .verification-form .loading-spinner i {
+    animation: spin 1s linear infinite;
+}
+
+
+/* Alertes */
+
+.verification-section .verification-form .alert-message {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.verification-section .verification-form .alert-message.error {
+    background: rgba(220, 53, 69, 0.08);
+}
+
+.verification-section .verification-form .alert-message.error i {
+    color: var(--danger);
+}
+
+.verification-section .verification-form .alert-message.success {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.verification-section .verification-form .alert-message.success i {
+    color: var(--success);
+}
+
+.verification-section .verification-form .alert-message .alert-content strong {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 0.2rem;
+}
+
+.verification-section .verification-form .alert-message .alert-content p {
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+
+/* Note de sécurité */
+
+.verification-section .verification-form .security-note {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(40, 177, 136, 0.05);
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+}
+
+.verification-section .verification-form .security-note i {
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+.verification-section .verification-form .security-note p {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--gray-600);
+    line-height: 1.4;
+}
+
+.verification-section .verification-form .security-note p strong {
+    color: var(--primary);
+}
+
+
+/* ============================================================
+   Animations
+   ============================================================ */
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 768px) {
+    .institution-section .institution-title {
+        font-size: 1.4rem !important;
+    }
+    .institution-section .features-list .feature-item {
+        padding: 0.4rem 0;
+    }
+    .institution-section .features-list .feature-item span {
+        font-size: 0.8rem;
+    }
+    .verification-wrapper .form-title {
+        font-size: 1.3rem !important;
+    }
+    .verification-section .verification-form .input-group input {
+        font-size: 1rem;
+        letter-spacing: 0.3rem;
+        padding: 0.75rem 1rem 0.75rem 2.2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .institution-section {
+        padding: 1rem 0.75rem;
+    }
+    .institution-section .company-logo-img {
+        max-width: 70px;
+    }
+    .verification-section {
+        padding: 1rem 0.75rem;
+    }
+    .verification-section .verification-form .input-group input {
+        font-size: 0.9rem;
+        letter-spacing: 0.2rem;
+        padding: 0.65rem 0.85rem 0.65rem 2rem;
+    }
+}

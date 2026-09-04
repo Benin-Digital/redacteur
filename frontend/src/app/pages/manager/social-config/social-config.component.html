@@ -1,0 +1,401 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" (click)="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1 class="page-title">Réseaux sociaux</h1>
+                    <span class="page-breadcrumb">Connectez vos comptes pour publier vos médias</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="refresh-btn" (click)="refresh()" [disabled]="isLoading">
+                    <i class="bi bi-arrow-repeat" [class.spin]="isLoading"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement des configurations...</p>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (errorMessage) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+            </div>
+            }
+
+            <!-- Success Message -->
+            @if (successMessage) {
+            <div class="success-state">
+                <i class="bi bi-check-circle-fill"></i>
+                <p>{{ successMessage }}</p>
+            </div>
+            }
+
+            <!-- Cards -->
+            @if (!isLoading) {
+            <div class="platforms-grid">
+                @for (platform of platforms; track platform.platform) {
+                <div class="platform-card" [class.connected]="platform.is_connected" [class.expired]="platform.is_token_expired">
+                    <!-- Header -->
+                    <div class="platform-header">
+                        <div class="platform-icon" [style.background]="platform.is_connected ? platform.color + '20' : '#f3f4f6'" [style.color]="platform.is_connected ? platform.color : '#9ca3af'">
+                            <i [class]="platform.icon"></i>
+                        </div>
+                        <div class="platform-info">
+                            <h3 class="platform-name">{{ platform.label }}</h3>
+                            <span class="platform-status" [class.connected]="platform.is_connected" [class.expired]="platform.is_token_expired">
+                                <i class="bi"
+                                    [class.bi-check-circle-fill]="platform.is_connected && !platform.is_token_expired"
+                                    [class.bi-exclamation-triangle-fill]="platform.is_connected && platform.is_token_expired"
+                                    [class.bi-circle]="!platform.is_connected"></i>
+                                {{ getStatusLabel(platform.platform) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="platform-body">
+                        @if (platform.is_connected) {
+                        <!-- Compte connecté -->
+                        <div class="account-info">
+                            @if (platform.profile_picture) {
+                            <img [src]="platform.profile_picture" [alt]="platform.account_name || 'Avatar'" class="avatar"> } @else {
+                            <div class="avatar-placeholder" [style.background]="platform.color + '15'" [style.color]="platform.color">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                            }
+                            <div class="account-details">
+                                <span class="account-name">{{ platform.account_name || 'Compte' }}</span> @if (platform.account_username) {
+                                <span class="account-username">&#64;{{ platform.account_username }}</span> }
+                            </div>
+                        </div>
+                        @if (platform.expires_at) {
+                        <div class="token-info">
+                            <i class="bi bi-clock"></i>
+                            <span>Expire le {{ platform.expires_at | date:'dd/MM/yyyy à HH:mm' }}</span>
+                        </div>
+                        }
+                        <button class="btn-disconnect" (click)="openDisconnectModal(platform.platform)">
+                            <i class="bi bi-link-45deg"></i> Déconnecter
+                        </button> } @else {
+                        <!--  Compte non connecté -->
+                        <div class="connect-info">
+                            @if (platform.platform === 'instagram') {
+                            <!-- Instagram : Connexion OAuth + Import token -->
+                            <div class="connect-methods">
+                                <div class="connect-icon-large" style="color: #E4405F;">
+                                    <i class="bi bi-instagram"></i>
+                                </div>
+                                <p>Connectez votre compte Instagram pour publier vos médias.</p>
+                                <div class="connect-buttons">
+                                    <button class="btn-connect" (click)="connect(platform.platform)" [disabled]="isConnecting(platform.platform)" style="background: #E4405F;">
+                                        @if (isConnecting(platform.platform)) {
+                                        <i class="bi bi-arrow-repeat spin"></i> Connexion en cours...
+                                        } @else {
+                                        <i class="bi bi-plus-circle"></i> Connecter avec OAuth
+                                        }
+                                    </button>
+                                    <button class="btn-import" (click)="openImportTokenModal('instagram')">
+                                        <i class="bi bi-key"></i> Importer un token
+                                    </button>
+                                </div>
+                                <div class="doc-link">
+                                    <i class="bi bi-file-text"></i>
+                                    <span> <strong>Besoin d'aide ?</strong></span>
+                                    <a href="/docs/instagram-token" target="_blank">
+                                        Comment obtenir un token Instagram
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            } @else {
+                            <!-- TikTok : Connexion OAuth + Import credentials -->
+                            <div class="connect-methods">
+                                <div class="connect-icon-large" style="color: #000000;">
+                                    <i class="bi bi-tiktok"></i>
+                                </div>
+                                <p>Connectez votre compte TikTok pour publier vos vidéos.</p>
+                                <div class="connect-buttons">
+                                    <button class="btn-connect" (click)="connect(platform.platform)" [disabled]="isConnecting(platform.platform)" style="background: #000000;">
+                                        @if (isConnecting(platform.platform)) {
+                                        <i class="bi bi-arrow-repeat spin"></i> Connexion en cours...
+                                        } @else {
+                                        <i class="bi bi-plus-circle"></i> Connecter avec OAuth
+                                        }
+                                    </button>
+                                    <button class="btn-import" (click)="openImportTikTokModal()">
+                                        <i class="bi bi-key"></i> Importer des credentials
+                                    </button>
+                                </div>
+                                <div class="doc-link">
+                                    <i class="bi bi-file-text"></i>
+                                    <span> <strong>Besoin d'aide ?</strong></span>
+                                    <a href="/docs/tiktok-token" target="_blank">
+                                        Comment obtenir les credentials TikTok
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            }
+                        </div>
+                        }
+                    </div>
+                </div>
+                }
+            </div>
+
+            <!-- Informations -->
+            <div class="info-card">
+                <div class="info-card-content">
+                    <i class="bi bi-info-circle"></i>
+                    <div>
+                        <h4>Comment ça fonctionne ?</h4>
+                        <p>
+                            Connectez vos comptes TikTok et Instagram pour pouvoir publier vos médias générés directement depuis la plateforme.
+                            <br>
+                            <strong>Note :</strong> Pour Instagram, vous devez avoir un compte professionnel ou créateur lié à une Page Facebook.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            }
+
+        </main>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL D'IMPORT DE TOKEN (UNIVERSEL)
+     ============================================================ -->
+<div class="modal-overlay" [class.show]="showTokenModal" (click)="closeImportTokenModal()">
+    <div class="modal-container modal-md" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-key"></i> Importer un token {{ importTokenPlatform === 'instagram' ? 'Instagram' : 'TikTok' }}
+            </h3>
+            <button class="modal-close" (click)="closeImportTokenModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Token d'accès -->
+            <div class="form-group">
+                <label class="form-label">
+                    Token d'accès {{ importTokenPlatform === 'instagram' ? 'Instagram' : 'TikTok' }}
+                    <span class="required">*</span>
+                </label>
+                <textarea class="form-control" [(ngModel)]="accessToken" rows="3" placeholder="Collez votre token {{ importTokenPlatform === 'instagram' ? 'Instagram' : 'TikTok' }} ici..."></textarea>
+                <div class="form-hint">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Comment obtenir un token ?</strong> @if (importTokenPlatform === 'instagram') {
+                    <ol>
+                        <li>Allez sur <a href="https://developers.facebook.com/apps/" target="_blank">Meta
+                                Developers</a></li>
+                        <li>Sélectionnez votre application Instagram</li>
+                        <li>Allez dans <strong>"Instagram Basic Display"</strong> → <strong>"Access Token
+                                Generator"</strong></li>
+                        <li>Connectez-vous avec votre compte Instagram</li>
+                        <li>Copiez le token généré</li>
+                    </ol>
+                    } @else {
+                    <ol>
+                        <li>Allez sur <a href="https://developers.tiktok.com/apps/" target="_blank">TikTok
+                                Developers</a></li>
+                        <li>Sélectionnez votre application TikTok</li>
+                        <li>Allez dans <strong>"App Management"</strong> → <strong>"OAuth"</strong></li>
+                        <li>Utilisez l'outil <strong>"Access Token Generator"</strong></li>
+                        <li>Copiez le token généré</li>
+                    </ol>
+                    }
+                </div>
+            </div>
+
+            <!-- ID du compte (pour Instagram) -->
+            @if (importTokenPlatform === 'instagram') {
+            <div class="form-group">
+                <label class="form-label">
+                    ID du compte Instagram <span class="required">*</span>
+                </label>
+                <input type="text" class="form-control" [(ngModel)]="userId" placeholder="Ex: 17841478572590361">
+                <div class="form-hint">
+                    <i class="bi bi-info-circle"></i> L'ID du compte se trouve dans l'URL de votre profil Instagram ou dans le token généré.
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Nom d'utilisateur Instagram <span class="required">*</span>
+                </label>
+                <input type="text" class="form-control" [(ngModel)]="username" placeholder="Ex: espace_foncier">
+                <div class="form-hint">
+                    <i class="bi bi-info-circle"></i> Le nom d'utilisateur de votre compte Instagram (sans le &#64;).
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-link-45deg"></i> Gérer les accès
+                </label>
+                <div class="form-hint">
+                    <a href="https://www.instagram.com/accounts/manage_access/" target="_blank">
+                        Gérer les applications autorisées sur Instagram
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                </div>
+            </div>
+            } @if (importTokenPlatform === 'tiktok') {
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-link-45deg"></i> Gérer les accès
+                </label>
+                <div class="form-hint">
+                    <a href="https://www.tiktok.com/settings/security" target="_blank">
+                        Gérer les applications autorisées sur TikTok
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                </div>
+            </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeImportTokenModal()">Annuler</button>
+            <button class="btn-primary" (click)="importToken()" [disabled]="!accessToken || !userId || !username || isImporting" [style.background]="importTokenPlatform === 'instagram' ? '#E4405F' : '#000000'">
+                @if (isImporting) {
+                <i class="bi bi-arrow-repeat spin"></i> Import en cours...
+                } @else {
+                <i class="bi bi-check-lg"></i> Importer le token
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL D'IMPORT TIKTOK CREDENTIALS
+     ============================================================ -->
+<div class="modal-overlay" [class.show]="showTikTokModal" (click)="closeImportTikTokModal()">
+    <div class="modal-container modal-md" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-key"></i> Importer les credentials TikTok
+            </h3>
+            <button class="modal-close" (click)="closeImportTikTokModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">
+                    Client Key <span class="required">*</span>
+                </label>
+                <input type="text" class="form-control" [(ngModel)]="tiktokClientKey" placeholder="Entrez votre Client Key TikTok">
+
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Client Secret <span class="required">*</span>
+                </label>
+                <input type="password" class="form-control" [(ngModel)]="tiktokClientSecret" placeholder="Entrez votre Client Secret TikTok">
+
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    Redirect URI
+                </label>
+                <input type="text" class="form-control" [(ngModel)]="tiktokRedirectUri" placeholder="URL de redirection">
+                <div class="form-hint">
+                    <i class="bi bi-info-circle"></i> Cette URL doit correspondre à celle configurée dans votre application TikTok Developer.
+                </div>
+            </div>
+
+            <div class="doc-link">
+                <i class="bi bi-file-text"></i>
+                <span><strong>Comment obtenir ces identifiants ?</strong></span>
+                <ol>
+                    <li>Allez sur <a href="https://developers.tiktok.com/apps/" target="_blank">TikTok Developers</a>
+                    </li>
+                    <li>Créez une application ou sélectionnez une application existante</li>
+                    <li>Allez dans <strong>"App Management"</strong> → <strong>"Basic Info"</strong></li>
+                    <li>Copiez le <strong>App Key (Client Key)</strong> et le <strong>App Secret (Client
+                            Secret)</strong></li>
+                    <li>Ajoutez <strong>"Login Kit"</strong> et activez les scopes nécessaires</li>
+                </ol>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeImportTikTokModal()">Annuler</button>
+            <button class="btn-primary" (click)="importTikTokCredentials()" [disabled]="!tiktokClientKey || !tiktokClientSecret || isImportingTikTok" style="background: #000000;">
+                @if (isImportingTikTok) {
+                <i class="bi bi-arrow-repeat spin"></i> Import en cours...
+                } @else {
+                <i class="bi bi-check-lg"></i> Importer et se connecter
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL DE CONFIRMATION DE DÉCONNEXION
+     ============================================================ -->
+<div class="modal-overlay" [class.show]="showDisconnectModal" (click)="closeDisconnectModal()">
+    <div class="modal-container modal-confirm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title text-danger">
+                <i class="bi bi-exclamation-triangle-fill"></i> Déconnecter
+            </h3>
+            <button class="modal-close" (click)="closeDisconnectModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body confirm-body">
+            <div class="confirm-icon" [style.color]="getPlatformColor(platformToDisconnect || '')">
+                <i class="bi bi-link-45deg" style="font-size: 3rem;"></i>
+            </div>
+            <p>Êtes-vous sûr de vouloir déconnecter</p>
+            <p class="confirm-name">{{ getPlatformLabel(platformToDisconnect || '') }} ?</p>
+            <p class="confirm-warning">Vous ne pourrez plus publier sur ce réseau tant que vous ne serez pas reconnecté.
+            </p>
+            <p class="confirm-info">
+                <i class="bi bi-info-circle"></i> Cette action supprime l'accès de l'application à votre compte.
+            </p>
+        </div>
+        <div class="modal-footer confirm-footer">
+            <button class="btn-secondary" (click)="closeDisconnectModal()">Annuler</button>
+            <button class="btn-danger" (click)="disconnect()" [disabled]="isDisconnecting">
+                @if (isDisconnecting) {
+                <i class="bi bi-arrow-repeat spin"></i> Déconnexion...
+                } @else {
+                <i class="bi bi-link-45deg"></i> Déconnecter
+                }
+            </button>
+        </div>
+    </div>
+</div>

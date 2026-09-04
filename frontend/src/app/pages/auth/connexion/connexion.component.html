@@ -1,0 +1,152 @@
+<div class="connexion-page">
+    <!-- Section gauche - Présentation institutionnelle -->
+    <div class="institution-section">
+        <div class="institution-content">
+            <!-- Logo BENIN DIGITAL -->
+            <div class="company-logo">
+                <img src="logo-benin-digital.png" alt="BENIN DIGITAL" class="company-logo-img">
+            </div>
+
+            <div class="institution-text">
+                <h1 class="institution-title">
+                    <span class="highlight">Agent IA</span> Rédaction Web
+                </h1>
+                <h2 class="institution-subtitle">
+                    Automatisation SEO
+                </h2>
+                <p class="institution-description">
+                    Générez automatiquement des articles optimisés pour le référencement, adaptés à votre ligne éditoriale et programmés selon votre calendrier.
+                </p>
+            </div>
+
+            <!-- Caractéristiques -->
+            <div class="features-list">
+                <div class="feature-item">
+                    <i class="bi bi-robot"></i>
+                    <span>IA puissante (LLM)</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-globe"></i>
+                    <span>Analyse de site automatique</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-calendar"></i>
+                    <span>Programmation de contenu</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-shield-check"></i>
+                    <span>Données sécurisées</span>
+                </div>
+            </div>
+
+            <!-- Footer institutionnel -->
+            <div class="institution-footer">
+                <p class="institution-name">BENIN DIGITAL</p>
+                <p class="institution-location">Entreprise de Services du Numérique</p>
+                <p class="institution-slogan">Transformez votre présence digitale</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section droite - Formulaire de connexion -->
+    <div class="connexion-section">
+        <div class="connexion-wrapper">
+            <div class="form-header">
+                <div class="back-home">
+                    <a routerLink="/" class="back-link">
+                        <i class="bi bi-arrow-left"></i> Retour à l'accueil
+                    </a>
+                </div>
+                <div class="form-title-container">
+                    <div class="form-icon">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <h2 class="form-title">Connexion</h2>
+                    <p class="form-subtitle">Accédez à votre espace de travail</p>
+                </div>
+            </div>
+
+            <!-- Formulaire -->
+            <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="connexion-form">
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        <i class="bi bi-envelope"></i>
+                        Adresse email
+                    </label>
+                    <div class="input-group">
+                        <input type="email" id="email" formControlName="email" placeholder="votre.email@benin-digital.com" autocomplete="email" [class.error]="f['email'].invalid && f['email'].touched">
+                        <div class="input-icon">
+                            <i class="bi bi-person"></i>
+                        </div>
+                    </div>
+                    <div *ngIf="f['email'].invalid && f['email'].touched" class="error-message">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span *ngIf="f['email'].errors?.['required']">L'email est requis</span>
+                        <span *ngIf="f['email'].errors?.['email']">Format d'email invalide</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">
+                        <i class="bi bi-key"></i>
+                        Mot de passe
+                    </label>
+                    <div class="input-group">
+                        <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password" placeholder="••••••••" autocomplete="current-password" [class.error]="f['password'].invalid && f['password'].touched">
+                        <div class="input-icon">
+                            <i class="bi bi-lock"></i>
+                        </div>
+                        <button type="button" class="password-toggle" (click)="togglePassword()">
+                            <i [class]="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                        </button>
+                    </div>
+                    <div *ngIf="f['password'].invalid && f['password'].touched" class="error-message">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span *ngIf="f['password'].errors?.['required']">Le mot de passe est requis</span>
+                        <span *ngIf="f['password'].errors?.['minlength']">Minimum 8 caractères</span>
+                    </div>
+                </div>
+
+                <!-- Options supplémentaires -->
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" formControlName="remember">
+                        <span class="checkmark"></span>
+                        Se souvenir de moi
+                    </label>
+                    <a routerLink="/mot-de-passe-oublie" class="forgot-password">
+                        <i class="bi bi-question-circle"></i> Mot de passe oublié ?
+                    </a>
+                </div>
+
+                <!-- Bouton de connexion -->
+                <button type="submit" class="connexion-button" [disabled]="loginForm.invalid || isLoading">
+                    <span *ngIf="!isLoading">
+                        Se connecter
+                    </span>
+                    <span *ngIf="isLoading" class="loading-spinner">
+                        <i class="bi bi-arrow-repeat spin"></i>
+                        Connexion en cours...
+                    </span>
+                </button>
+
+                <!-- Messages d'état -->
+                <div *ngIf="errorMessage" class="alert-message error">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div class="alert-content">
+                        <strong>Erreur de connexion</strong>
+                        <p>{{ errorMessage }}</p>
+                    </div>
+                </div>
+
+                <!-- Note d'information -->
+                <div class="security-note">
+                    <i class="bi bi-info-circle"></i>
+                    <p>
+                        <strong>Accès sécurisé</strong> — Toutes les données sont chiffrées et protégées.
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

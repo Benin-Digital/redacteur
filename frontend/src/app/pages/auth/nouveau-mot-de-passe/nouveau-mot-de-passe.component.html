@@ -1,0 +1,161 @@
+<div class="reset-page">
+    <!-- Section gauche - Présentation institutionnelle -->
+    <div class="institution-section">
+        <div class="institution-content">
+            <div class="company-logo">
+                <img src="logo-benin-digital.png" alt="BENIN DIGITAL" class="company-logo-img">
+            </div>
+
+            <div class="institution-text">
+                <h1 class="institution-title">
+                    <span class="highlight">Agent IA</span> Rédaction Web
+                </h1>
+                <h2 class="institution-subtitle">
+                    Automatisation SEO
+                </h2>
+                <p class="institution-description">
+                    Générez automatiquement des articles optimisés pour le référencement, adaptés à votre ligne éditoriale et programmés selon votre calendrier.
+                </p>
+            </div>
+
+            <div class="features-list">
+                <div class="feature-item">
+                    <i class="bi bi-robot"></i>
+                    <span>IA puissante (LLM)</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-globe"></i>
+                    <span>Analyse de site automatique</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-calendar"></i>
+                    <span>Programmation de contenu</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-shield-check"></i>
+                    <span>Données sécurisées</span>
+                </div>
+            </div>
+
+            <div class="institution-footer">
+                <p class="institution-name">BENIN DIGITAL</p>
+                <p class="institution-location">Entreprise de Services du Numérique</p>
+                <p class="institution-slogan">Transformez votre présence digitale</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section droite - Formulaire nouveau mot de passe -->
+    <div class="reset-section">
+        <div class="reset-wrapper">
+            <div class="form-header">
+                <div class="back-home">
+                    <a routerLink="/connexion" class="back-link">
+                        <i class="bi bi-arrow-left"></i> Retour à la connexion
+                    </a>
+                </div>
+                <div class="form-title-container">
+                    <div class="form-icon">
+                        <i class="bi bi-key"></i>
+                    </div>
+                    <h2 class="form-title">Nouveau mot de passe</h2>
+                    <p class="form-subtitle">Choisissez un mot de passe sécurisé</p>
+                </div>
+            </div>
+
+            <form [formGroup]="resetForm" (ngSubmit)="onSubmit()" class="reset-form">
+                <!-- Nouveau mot de passe -->
+                <div class="form-group">
+                    <label for="password" class="form-label">
+                        <i class="bi bi-lock"></i>
+                        Nouveau mot de passe
+                    </label>
+                    <div class="input-group">
+                        <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password" placeholder="••••••••" autocomplete="new-password" [class.error]="f['password'].invalid && f['password'].touched">
+                        <div class="input-icon">
+                            <i class="bi bi-key"></i>
+                        </div>
+                        <button type="button" class="password-toggle" (click)="togglePassword()">
+                            <i [class]="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                        </button>
+                    </div>
+
+                    <!-- Critères du mot de passe -->
+                    <div class="password-requirements" *ngIf="f['password'].touched">
+                        <p class="requirements-title">Le mot de passe doit contenir :</p>
+                        <ul>
+                            <li [class.valid]="hasMinLength()">Au moins 10 caractères</li>
+                            <li [class.valid]="hasUpperCase()">Au moins une majuscule</li>
+                            <li [class.valid]="hasLowerCase()">Au moins une minuscule</li>
+                            <li [class.valid]="hasDigit()">Au moins un chiffre</li>
+                            <li [class.valid]="hasSpecialChar()">Au moins un caractère spécial (&#64;$!%*?&)</li>
+                        </ul>
+                    </div>
+
+                    <div *ngIf="f['password'].invalid && f['password'].touched" class="error-message">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span *ngIf="f['password'].errors?.['required']">Le mot de passe est requis</span>
+                        <span *ngIf="f['password'].errors?.['minlength']">Minimum 10 caractères requis</span>
+                        <span *ngIf="f['password'].errors?.['pattern']">Format de mot de passe invalide</span>
+                    </div>
+                </div>
+
+                <!-- Confirmation mot de passe -->
+                <div class="form-group">
+                    <label for="password_confirmation" class="form-label">
+                        <i class="bi bi-check-circle"></i>
+                        Confirmer le mot de passe
+                    </label>
+                    <div class="input-group">
+                        <input [type]="showConfirmPassword ? 'text' : 'password'" id="password_confirmation" formControlName="password_confirmation" placeholder="••••••••" autocomplete="new-password" [class.error]="f['password_confirmation'].invalid && f['password_confirmation'].touched">
+                        <div class="input-icon">
+                            <i class="bi bi-check-lg"></i>
+                        </div>
+                        <button type="button" class="password-toggle" (click)="toggleConfirmPassword()">
+                            <i [class]="showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                        </button>
+                    </div>
+                    <div *ngIf="resetForm.errors?.['mismatch'] && f['password_confirmation'].touched" class="error-message">
+                        <i class="bi bi-exclamation-circle"></i> Les mots de passe ne correspondent pas
+                    </div>
+                </div>
+
+                <!-- Bouton de réinitialisation -->
+                <button type="submit" class="reset-button" [disabled]="resetForm.invalid || isLoading">
+                    <span *ngIf="!isLoading">
+                        Réinitialiser le mot de passe
+                    </span>
+                    <span *ngIf="isLoading" class="loading-spinner">
+                        <i class="bi bi-arrow-repeat spin"></i>
+                        Envoi en cours...
+                    </span>
+                </button>
+
+                <!-- Messages d'état -->
+                <div *ngIf="successMessage" class="alert-message success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <div class="alert-content">
+                        <strong>Succès !</strong>
+                        <p>{{ successMessage }}</p>
+                    </div>
+                </div>
+
+                <div *ngIf="errorMessage" class="alert-message error">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <div class="alert-content">
+                        <strong>Erreur</strong>
+                        <p>{{ errorMessage }}</p>
+                    </div>
+                </div>
+
+                <!-- Informations -->
+                <div class="info-note">
+                    <i class="bi bi-info-circle"></i>
+                    <p>
+                        <strong>Mot de passe sécurisé recommandé</strong><br> Utilisez une combinaison unique de lettres, chiffres et symboles.
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

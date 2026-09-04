@@ -1,0 +1,270 @@
+<div class="app-layout">
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen"></app-sidebar>
+
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()"></div>
+
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" (click)="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1 class="page-title">Mot de passe d'application WordPress</h1>
+                    <span class="page-breadcrumb">Documentation / Sécurité</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="refresh-btn" (click)="goBack()">
+                    <i class="bi bi-arrow-left"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+            <div class="docs-container">
+                <!-- En-tête -->
+                <div class="docs-header animate-on-scroll">
+                    <h1>Mot de passe d'application WordPress</h1>
+                    <p class="docs-subtitle">Connectez votre site WordPress à l'agent IA de rédaction web en toute sécurité</p>
+                </div>
+
+                <!-- Introduction -->
+                <div class="docs-card animate-on-scroll" style="--delay:0.05s">
+                    <div class="docs-card-header">
+                        <i class="bi bi-info-circle"></i>
+                        <h2>Qu'est-ce qu'un mot de passe d'application ?</h2>
+                    </div>
+                    <div class="docs-card-body">
+                        <p>Un <strong>mot de passe d'application</strong> est un code unique généré par WordPress qui permet à des applications tierces (comme notre agent IA de rédaction web) de communiquer avec votre site <strong>sans utiliser votre mot de passe principal</strong>.</p>
+                        <p>Cette technologie, introduite par WordPress, offre une couche de sécurité supplémentaire en vous permettant de :</p>
+                        <ul>
+                            <li><i class="bi bi-check-circle-fill"></i> Générer des mots de passe spécifiques par application</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Révoquer l'accès à tout moment sans changer votre mot de passe principal</li>
+                            <li><i class="bi bi-check-circle-fill"></i> Limiter les risques en cas de fuite de données</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Utilité -->
+                <div class="docs-card animate-on-scroll" style="--delay:0.1s">
+                    <div class="docs-card-header">
+                        <i class="bi bi-question-circle"></i>
+                        <h2>Pourquoi est-ce nécessaire pour notre agent IA ?</h2>
+                    </div>
+                    <div class="docs-card-body">
+                        <p>Notre agent IA de rédaction web a besoin d'une connexion sécurisée à votre site WordPress pour :</p>
+                        <div class="benefits-grid">
+                            <div class="benefit-item">
+                                <i class="bi bi-cloud-upload"></i>
+                                <h4>Publication automatique</h4>
+                                <p>Publiez instantanément les articles générés par l'IA sur votre site</p>
+                            </div>
+                            <div class="benefit-item">
+                                <i class="bi bi-calendar-event"></i>
+                                <h4>Programmation</h4>
+                                <p>Planifiez vos articles pour une publication ultérieure</p>
+                            </div>
+                            <div class="benefit-item">
+                                <i class="bi bi-tags"></i>
+                                <h4>Gestion des catégories</h4>
+                                <p>Créez et assignez automatiquement des catégories et tags</p>
+                            </div>
+                            <div class="benefit-item">
+                                <i class="bi bi-magic"></i>
+                                <h4>SEO optimisé</h4>
+                                <p>Structurez vos articles avec les bonnes métadonnées SEO</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sécurité -->
+                <div class="docs-card security-card animate-on-scroll" style="--delay:0.15s">
+                    <div class="docs-card-header">
+                        <i class="bi bi-shield-check"></i>
+                        <h2>Une sécurité renforcée</h2>
+                    </div>
+                    <div class="docs-card-body">
+                        <div class="security-grid">
+                            <div class="security-point">
+                                <i class="bi bi-key"></i>
+                                <div>
+                                    <strong>Pas de partage de mot de passe</strong>
+                                    <p>Votre mot de passe principal reste confidentiel. Le mot de passe d'application est révocable indépendamment.</p>
+                                </div>
+                            </div>
+                            <div class="security-point">
+                                <i class="bi bi-sliders2"></i>
+                                <div>
+                                    <strong>Contrôle total</strong>
+                                    <p>Générez, révoquez et gérez chaque mot de passe d'application depuis votre profil WordPress.</p>
+                                </div>
+                            </div>
+                            <div class="security-point">
+                                <i class="bi bi-eye-slash"></i>
+                                <div>
+                                    <strong>Chiffrement des données</strong>
+                                    <p>Tous les mots de passe d'application sont chiffrés dans notre base de données.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="security-badge">
+                            <i class="bi bi-patch-check-fill"></i>
+                            <span>Notre plateforme est conforme aux standards de sécurité les plus stricts</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tutoriel -->
+                <div class="docs-card tutorial-card animate-on-scroll" style="--delay:0.2s">
+                    <div class="docs-card-header">
+                        <i class="bi bi-mortarboard"></i>
+                        <h2>Comment générer votre mot de passe d'application</h2>
+                    </div>
+                    <div class="docs-card-body">
+                        <div class="steps-container">
+                            <div class="step">
+                                <div class="step-number">1</div>
+                                <div class="step-content">
+                                    <h4>Connectez-vous à votre administration WordPress</h4>
+                                    <p>Rendez-vous sur <code>https://votre-site.com/wp-admin</code> et connectez-vous avec vos identifiants administrateur.</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">2</div>
+                                <div class="step-content">
+                                    <h4>Accédez à votre profil utilisateur</h4>
+                                    <p>Dans le menu latéral gauche, cliquez sur <strong>Utilisateurs → Votre profil</strong>.</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">3</div>
+                                <div class="step-content">
+                                    <h4>Créez un mot de passe d'application</h4>
+                                    <p>Scrollez jusqu'à la section <strong>Mots de passe d'application</strong>. Saisissez un nom (ex: "Agent IA Rédaction") et cliquez sur <strong>Ajouter un nouveau mot de passe d'application</strong>.</p>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">4</div>
+                                <div class="step-content">
+                                    <h4>Copiez le mot de passe généré</h4>
+                                    <p>Un code au format <code>xxxx xxxx xxxx xxxx</code> apparaît. <strong>Copiez-le immédiatement</strong> — il ne sera plus affiché après avoir quitté la page.</p>
+                                    <div class="step-warning">
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                        <span>Ce mot de passe ne vous sera plus jamais affiché. Conservez-le précieusement !</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="step">
+                                <div class="step-number">5</div>
+                                <div class="step-content">
+                                    <h4>Configurez dans notre plateforme</h4>
+                                    <p>Revenez sur notre plateforme et renseignez :</p>
+                                    <ul>
+                                        <li>L'URL de votre site WordPress</li>
+                                        <li>Votre nom d'utilisateur WordPress</li>
+                                        <li>Le mot de passe d'application généré</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API REST -->
+                <div class="docs-card animate-on-scroll" style="--delay:0.25s">
+                    <div class="docs-card-header">
+                        <i class="bi bi-plug"></i>
+                        <h2>L'API REST WordPress : Le pont sécurisé</h2>
+                    </div>
+                    <div class="docs-card-body">
+                        <p>Notre agent IA utilise l'<strong>API REST de WordPress</strong> — une interface de communication standard qui permet aux applications externes d'interagir avec votre site.</p>
+                        <div class="api-info">
+                            <code>POST /wp-json/wp/v2/posts</code>
+                            <span>→ Publication d'un article</span>
+                        </div>
+                        <div class="api-info">
+                            <code>GET /wp-json/wp/v2/users/me</code>
+                            <span>→ Vérification de l'authentification</span>
+                        </div>
+                        <div class="api-info">
+                            <code>POST /wp-json/wp/v2/categories</code>
+                            <span>→ Création de catégories</span>
+                        </div>
+                        <p class="mt-3">Toutes les communications sont effectuées en <strong>HTTPS</strong> (si configuré sur votre site) et authentifiées via le mot de passe d'application.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ -->
+                <div class="docs-card animate-on-scroll" style="--delay:0.3s">
+                    <div class="docs-card-header">
+                        <i class="bi bi-question-lg"></i>
+                        <h2>Questions fréquentes</h2>
+                    </div>
+                    <div class="docs-card-body faq-container">
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <i class="bi bi-diamond"></i>
+                                <span>Que faire si j'ai perdu mon mot de passe d'application ?</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Rendez-vous dans votre profil WordPress, révoquez l'ancien mot de passe et générez-en un nouveau. Puis mettez à jour la configuration dans notre plateforme.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <i class="bi bi-diamond"></i>
+                                <span>Puis-je utiliser plusieurs mots de passe pour différentes applications ?</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Absolument ! WordPress vous permet de générer plusieurs mots de passe d'application, un par application tierce.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <i class="bi bi-diamond"></i>
+                                <span>Comment révoquer l'accès de l'agent IA ?</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Dans votre profil WordPress, cliquez sur <strong>Révoquer</strong> à côté du mot de passe d'application correspondant. L'accès sera immédiatement bloqué.</p>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <i class="bi bi-diamond"></i>
+                                <span>Est-ce que mon mot de passe principal est en danger ?</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p><strong>Non.</strong> Le mot de passe d'application est indépendant. En cas de compromission, vous pouvez le révoquer sans modifier votre mot de passe principal.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conclusion -->
+                <div class="docs-card conclusion-card animate-on-scroll" style="--delay:0.35s">
+                    <div class="docs-card-body">
+                        <p>Le mot de passe d'application WordPress est la méthode <strong>la plus sécurisée</strong> pour connecter notre agent IA à votre site. Il vous offre un contrôle total sur les accès tout en protégeant vos identifiants principaux.</p>
+                        <a routerLink="/manager/wp-config" class="btn-back-config">
+                            <i class="bi bi-gear"></i> Retour à la configuration WordPress
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Auteur en bas -->
+                <div class="author-card animate-on-scroll" style="--delay:0.4s">
+                    <div class="author-avatar">AT</div>
+                    <div class="author-info">
+                        <div class="author-name">Abdoul-Wakilou TIGA</div>
+                        <div class="author-title">AI Application Engineer</div>
+                        <div class="author-date">
+                            <i class="bi bi-calendar"></i> Publié le 15 janvier 2025
+                            <i class="bi bi-clock ms-2"></i> 5 min de lecture
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>

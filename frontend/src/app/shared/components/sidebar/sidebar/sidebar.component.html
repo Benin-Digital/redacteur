@@ -1,0 +1,60 @@
+<!-- Overlay mobile -->
+<div class="sidebar-overlay" [class.show]="mobileOpen" (click)="toggleCollapse()"></div>
+
+<aside class="sidebar" [class.collapsed]="collapsed && !mobileOpen" [class.mobile-open]="mobileOpen">
+
+    <!-- Header avec logo alternatif -->
+    <div class="sidebar-header">
+        <div class="brand" [routerLink]="isAdmin ? '/admin/dashboard' : '/manager/dashboard'" (click)="closeMobile()">
+            <!-- Logo complet (visible quand non collapsed) -->
+            <img class="logo-full" src="logo-benin-digital.png" alt="BENIN DIGITAL" [class.hidden]="collapsed && !mobileOpen">
+
+            <!-- Logo icône (visible quand collapsed) -->
+            <img class="logo-icon" src="logo-icon.png" alt="BENIN DIGITAL" [class.visible]="collapsed && !mobileOpen">
+        </div>
+        <button class="collapse-btn" (click)="toggleCollapse()" [title]="collapsed ? 'Développer' : 'Réduire'">
+            <i class="bi" [class.bi-chevron-left]="!collapsed" [class.bi-chevron-right]="collapsed && !mobileOpen"></i>
+        </button>
+    </div>
+
+    <!-- Navigation principale -->
+    <nav class="sidebar-nav">
+        <div class="nav-section">
+            <ul class="nav-menu">
+                <li *ngFor="let item of navItems" class="nav-item">
+                    <a [routerLink]="item.route" routerLinkActive="active" (click)="closeMobile()" class="nav-link" [title]="(collapsed && !mobileOpen) ? item.label : ''">
+                        <i [class]="item.icon"></i>
+                        <span class="nav-label" *ngIf="!collapsed || mobileOpen">{{ item.label }}</span>
+                        <span class="nav-badge" *ngIf="item.badge && (!collapsed || mobileOpen)">{{ item.badge }}</span>
+                        <span class="nav-tooltip" *ngIf="collapsed && !mobileOpen">{{ item.label }}</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Footer avec avatar utilisateur et déconnexion -->
+    <div class="sidebar-footer">
+        <!-- Profil utilisateur en bas -->
+        <div class="user-footer" [class.collapsed]="collapsed && !mobileOpen">
+            <div class="user-avatar" [routerLink]="isAdmin ? '/admin/parametres' : '/manager/parametres'" (click)="closeMobile()">
+                <span class="avatar-initials">{{ userInitials }}</span>
+                <span class="online-dot"></span>
+            </div>
+            <div class="user-info" *ngIf="!collapsed || mobileOpen">
+                <div class="user-name">{{ userFullName }}</div>
+                <div class="user-role">
+                    <i class="bi" [class.bi-shield-lock-fill]="isAdmin" [class.bi-person]="!isAdmin"></i> {{ roleLabel }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Bouton déconnexion -->
+        <button class="logout-btn" (click)="logout()" [title]="(collapsed && !mobileOpen) ? 'Déconnexion' : ''">
+            <i class="bi bi-box-arrow-right"></i>
+            <span class="logout-label" *ngIf="!collapsed || mobileOpen">Déconnexion</span>
+            <span class="nav-tooltip" *ngIf="collapsed && !mobileOpen">Déconnexion</span>
+        </button>
+    </div>
+
+</aside>

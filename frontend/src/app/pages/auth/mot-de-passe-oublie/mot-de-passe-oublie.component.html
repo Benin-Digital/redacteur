@@ -1,0 +1,134 @@
+<div class="forgot-page">
+    <!-- Section gauche - Présentation institutionnelle -->
+    <div class="institution-section">
+        <div class="institution-content">
+            <!-- Logo BENIN DIGITAL -->
+            <div class="company-logo">
+                <img src="logo-benin-digital.png" alt="BENIN DIGITAL" class="company-logo-img">
+            </div>
+
+            <div class="institution-text">
+                <h1 class="institution-title">
+                    <span class="highlight">Agent IA</span> Rédaction Web
+                </h1>
+                <h2 class="institution-subtitle">
+                    Automatisation SEO
+                </h2>
+                <p class="institution-description">
+                    Générez automatiquement des articles optimisés pour le référencement, adaptés à votre ligne éditoriale et programmés selon votre calendrier.
+                </p>
+            </div>
+
+            <!-- Caractéristiques -->
+            <div class="features-list">
+                <div class="feature-item">
+                    <i class="bi bi-robot"></i>
+                    <span>IA puissante (LLM)</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-globe"></i>
+                    <span>Analyse de site automatique</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-calendar"></i>
+                    <span>Programmation de contenu</span>
+                </div>
+                <div class="feature-item">
+                    <i class="bi bi-shield-check"></i>
+                    <span>Données sécurisées</span>
+                </div>
+            </div>
+
+            <!-- Footer institutionnel -->
+            <div class="institution-footer">
+                <p class="institution-name">BENIN DIGITAL</p>
+                <p class="institution-location">Entreprise de Services du Numérique</p>
+                <p class="institution-slogan">Transformez votre présence digitale</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section droite - Formulaire mot de passe oublié -->
+    <div class="forgot-section">
+        <div class="forgot-wrapper">
+            <div class="form-header">
+                <div class="back-home">
+                    <a routerLink="/connexion" class="back-link">
+                        <i class="bi bi-arrow-left"></i> Retour à la connexion
+                    </a>
+                </div>
+                <div class="form-title-container">
+                    <div class="form-icon">
+                        <i class="bi bi-envelope-paper"></i>
+                    </div>
+                    <h2 class="form-title">Mot de passe oublié</h2>
+                    <p class="form-subtitle">Nous vous enverrons un lien pour le réinitialiser</p>
+                </div>
+            </div>
+
+            <!-- Formulaire -->
+            <form [formGroup]="forgotForm" (ngSubmit)="onSubmit()" class="forgot-form">
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        <i class="bi bi-envelope"></i>
+                        Adresse email
+                    </label>
+                    <div class="input-group">
+                        <input type="email" id="email" formControlName="email" placeholder="votre.email@benin-digital.com" autocomplete="email" [class.error]="f['email'].invalid && f['email'].touched">
+                        <div class="input-icon">
+                            <i class="bi bi-person"></i>
+                        </div>
+                    </div>
+                    <div *ngIf="f['email'].invalid && f['email'].touched" class="error-message">
+                        <i class="bi bi-exclamation-circle"></i>
+                        <span *ngIf="f['email'].errors?.['required']">L'email est requis</span>
+                        <span *ngIf="f['email'].errors?.['email']">Format d'email invalide</span>
+                    </div>
+                </div>
+
+                <!-- Bouton d'envoi -->
+                <button type="submit" class="forgot-button" [disabled]="forgotForm.invalid || isLoading">
+                    <span *ngIf="!isLoading">
+                        Envoyer le lien
+                    </span>
+                    <span *ngIf="isLoading" class="loading-spinner">
+                        <i class="bi bi-arrow-repeat spin"></i>
+                        Envoi en cours...
+                    </span>
+                </button>
+
+                <!-- Messages d'état -->
+                <div *ngIf="successMessage" class="alert-message success">
+                    <i class="bi bi-check-circle"></i>
+                    <div class="alert-content">
+                        <strong>Email envoyé</strong>
+                        <p>{{ successMessage }}</p>
+                    </div>
+                </div>
+
+                <div *ngIf="errorMessage" class="alert-message error">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <div class="alert-content">
+                        <strong>Erreur</strong>
+                        <p>{{ errorMessage }}</p>
+                    </div>
+                </div>
+
+                <!-- Lien retour connexion -->
+                <div class="back-to-login">
+                    <a routerLink="/connexion">
+                        <i class="bi bi-arrow-return-left"></i> Retour à la page de connexion
+                    </a>
+                </div>
+
+                <!-- Note d'information -->
+                <div class="info-note">
+                    <i class="bi bi-info-circle"></i>
+                    <p>
+                        <strong>Vous n'avez pas reçu d'email ?</strong><br> Vérifiez vos spams ou contactez l'administrateur.
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

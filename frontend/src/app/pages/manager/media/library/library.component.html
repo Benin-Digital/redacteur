@@ -1,0 +1,846 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" (click)="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1 class="page-title">Bibliothèque de médias</h1>
+                    <span class="page-breadcrumb">Gérez vos images et vidéos générées par IA</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="btn-upload" (click)="openUploadModal()">
+                    <i class="bi bi-cloud-upload"></i>
+                    <span>Uploader</span>
+                </button>
+                <button class="btn-new" routerLink="/manager/media/generate">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Générer</span>
+                </button>
+                <button class="refresh-btn" (click)="loadMedias()" [disabled]="isLoading">
+                    <i class="bi bi-arrow-repeat" [class.spin]="isLoading"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Error State -->
+            @if (errorMessage) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+            </div>
+            }
+
+            <!-- Success Message -->
+            @if (successMessage) {
+            <div class="success-state">
+                <i class="bi bi-check-circle-fill"></i>
+                <p>{{ successMessage }}</p>
+            </div>
+            }
+
+            <!-- ============================================================
+                 CARTE PRINCIPALE
+                 ============================================================ -->
+            <div class="card animate-in">
+
+                <!-- Header avec filtres -->
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="bi bi-collection-fill"></i> Ma bibliothèque
+                        <span class="media-count">({{ total }} média{{ total > 1 ? 's' : '' }})</span>
+                    </h2>
+                    <div class="card-actions">
+                        <button class="btn-reset" (click)="resetFilters()" title="Réinitialiser les filtres">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="filters-bar animate-in">
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" [(ngModel)]="filters.search" placeholder="Rechercher un média..." class="search-input" (input)="onSearchChange()">
+                        </div>
+                        <div class="filter-tabs">
+                            <!-- FILTRE TYPE (image/video) -->
+                            <button class="filter-tab" [class.active]="filters.type === ''" (click)="setTypeFilter('')">
+                                <i class="bi bi-grid"></i> Tous
+                                <span class="count">{{ total }}</span>
+                            </button>
+                            <button class="filter-tab" [class.active]="filters.type === 'image'" (click)="setTypeFilter('image')">
+                                <i class="bi bi-image"></i> Images
+                                <span class="count">{{ imageCount }}</span>
+                            </button>
+                            <button class="filter-tab" [class.active]="filters.type === 'video'" (click)="setTypeFilter('video')">
+                                <i class="bi bi-film"></i> Vidéos
+                                <span class="count">{{ videoCount }}</span>
+                            </button>
+
+                            <!-- Séparateur -->
+                            <span class="filter-divider"></span>
+
+                            <!-- FILTRE STATUT -->
+                            <button class="filter-tab" [class.active]="filters.status === 'all'" (click)="setStatusFilter('all')">
+                                <i class="bi bi-grid"></i> Tous
+                                <span class="count">{{ total }}</span>
+                            </button>
+                            <button class="filter-tab" [class.active]="filters.status === 'published'" (click)="setStatusFilter('published')">
+                                <i class="bi bi-check-circle"></i> Publiés
+                                <span class="count">{{ publishedCount }}</span>
+                            </button>
+                            <button class="filter-tab" [class.active]="filters.status === 'scheduled'" (click)="setStatusFilter('scheduled')">
+                                <i class="bi bi-clock"></i> Programmés
+                                <span class="count">{{ scheduledCount }}</span>
+                            </button>
+                            <button class="filter-tab" [class.active]="filters.status === 'pending'" (click)="setStatusFilter('pending')">
+                                <i class="bi bi-hourglass"></i> En attente
+                                <span class="count">{{ pendingCount }}</span>
+                            </button>
+                            <button class="filter-tab" [class.active]="filters.status === 'failed'" (click)="setStatusFilter('failed')">
+                                <i class="bi bi-exclamation-triangle"></i> Échoués
+                                <span class="count">{{ failedCount }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Loading -->
+                    @if (isLoading) {
+                    <div class="loading-state">
+                        <div class="loading-spinner"></div>
+                        <p>Chargement de votre bibliothèque...</p>
+                    </div>
+                    }
+
+                    <!-- Empty state -->
+                    @if (isEmpty && !isLoading) {
+                    <div class="empty-state">
+                        <i class="bi bi-collection"></i>
+                        <h3>Votre bibliothèque est vide</h3>
+                        <p>Générez des images ou des vidéos, ou uploader vos propres fichiers pour commencer.</p>
+
+                    </div>
+                    }
+
+                    <!-- Grid des médias -->
+                    @if (!isLoading && medias.length > 0) {
+                    <div class="media-grid">
+                        @for (media of medias | slice: (currentPage-1)*perPage : currentPage*perPage; track media.id) {
+                        <div class="media-card" (click)="openMediaModal(media)">
+                            <!-- Contenu média -->
+                            <div class="media-thumbnail">
+                                @if (getMediaType(media) === 'image') {
+                                <img [src]="getSafeUrl(media.url)" [alt]="media.file_name" loading="lazy">} @else {
+                                <div class="video-thumbnail">
+                                    <!-- Utiliser poster pour afficher la première frame -->
+                                    <video [src]="getSafeUrl(media.url)" muted preload="metadata" [poster]="getSafeUrl(media.url)" playsinline>
+                                    </video>
+                                    <div class="video-play-icon">
+                                        <i class="bi bi-play-circle-fill"></i>
+                                    </div>
+                                    <span class="video-duration">{{ media.duration_seconds || "" }}</span>
+                                </div>
+                                }
+                                <div class="media-type-badge">
+                                    <i [class]="getMediaIcon(media)"></i> {{ getMediaTypeLabel(media) }}
+                                </div>
+                                <div class="media-status-badge">
+                                    @if (media.is_published) {
+                                    <span class="badge-published">
+                                        Publié
+                                    </span> } @else if (media.is_scheduled) {
+                                    <span class="badge-scheduled">
+                                        Programmé
+                                    </span> } @else if (media.is_failed) {
+                                    <span class="badge-failed">
+                                        Échoué
+                                    </span> } @else if (media.is_pending) { }
+                                </div>
+
+                            </div>
+
+                            <!-- Infos -->
+                            <div class="media-info">
+                                <div class="media-name" title="{{ media.file_name }}">
+                                    {{ media.file_name | slice:0:25 }}{{ media.file_name.length > 25 ? '…' : '' }}
+                                </div>
+                                <div class="media-meta">
+                                    <span class="media-size">{{ getFileSize(media.file_size) }}</span>
+                                    <span class="media-date">{{ getFormattedDate(media.created_at) }}</span>
+                                </div>
+                                @if (media.provider) {
+                                <div class="media-provider">
+                                    <i class="bi bi-cpu"></i> {{ media.provider }} @if (media.model_used) {
+                                    <span> · {{ media.model_used }}</span> }
+                                </div>
+                                }
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="media-actions" (click)="$event.stopPropagation()">
+                                <button class="action-btn view" (click)="openMediaModal(media)" title="Voir">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="action-btn share" (click)="openShareModal(media, $event)" title="Partager sur les réseaux sociaux">
+                                    <i class="bi bi-share"></i>
+                                </button>
+                                <button class="action-btn download" (click)="downloadMedia(media, $event)" title="Télécharger">
+                                    <i class="bi bi-download"></i>
+                                </button>
+                                <button class="action-btn delete" (click)="openDeleteModal(media, $event)" title="Supprimer">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        }
+                    </div>
+
+                    <!-- Pagination -->
+                    @if (totalPages > 1) {
+                    <div class="pagination">
+                        <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+                            <i class="bi bi-chevron-left"></i>
+                        </button> @for (page of getPages(); track page) {
+                        <button class="page-btn" [class.active]="page === currentPage" (click)="goToPage(page)">
+                            {{ page }}
+                        </button> }
+                        <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <span class="page-info">Page {{ currentPage }} / {{ totalPages }}</span>
+                    </div>
+                    } }
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL VISUALISATION
+     ============================================================ -->
+<div class="modal-overlay" [class.show]="showMediaModal" (click)="closeMediaModal()">
+    <div class="modal-container modal-lg" (click)="$event.stopPropagation()">
+        @if (selectedMedia) {
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i [class]="getMediaIcon(selectedMedia)"></i> {{ getMediaTypeLabel(selectedMedia) }} - {{ selectedMedia.file_name }}
+            </h3>
+            <button class="modal-close" (click)="closeMediaModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Aperçu -->
+            <div class="media-preview">
+                @if (getMediaType(selectedMedia) === 'image') {
+                <img [src]="selectedMedia.url" [alt]="selectedMedia.file_name" class="preview-image"> } @else {
+                <video controls [src]="selectedMedia.url" class="preview-video"></video> }
+            </div>
+
+            <!-- Détails -->
+            <div class="media-details">
+                <div class="details-grid">
+                    <!-- Informations de base -->
+                    <div class="detail-item">
+                        <span class="detail-label">Nom</span>
+                        <span class="detail-value">{{ selectedMedia.file_name }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Type</span>
+                        <span class="detail-value">{{ getMediaTypeLabel(selectedMedia) }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Taille</span>
+                        <span class="detail-value">{{ getFileSize(selectedMedia.file_size) }}</span>
+                    </div>
+                    @if (selectedMedia.width && selectedMedia.height) {
+                    <div class="detail-item">
+                        <span class="detail-label">Dimensions</span>
+                        <span class="detail-value">{{ selectedMedia.width }} × {{ selectedMedia.height }}</span>
+                    </div>
+                    } @if (selectedMedia.duration_seconds) {
+                    <div class="detail-item">
+                        <span class="detail-label">Durée</span>
+                        <span class="detail-value">{{ selectedMedia.duration_seconds }} secondes</span>
+                    </div>
+                    } @if (selectedMedia.provider) {
+                    <div class="detail-item">
+                        <span class="detail-label">Provider</span>
+                        <span class="detail-value">{{ selectedMedia.provider }}</span>
+                    </div>
+                    } @if (selectedMedia.model_used) {
+                    <div class="detail-item">
+                        <span class="detail-label">Modèle</span>
+                        <span class="detail-value">{{ selectedMedia.model_used }}</span>
+                    </div>
+                    } @if (selectedMedia.prompt_used) {
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Prompt utilisé</span>
+                        <span class="detail-value prompt-text">{{ selectedMedia.prompt_used }}</span>
+                    </div>
+                    }
+                    <div class="detail-item">
+                        <span class="detail-label">Créé le</span>
+                        <span class="detail-value">{{ getFormattedDate(selectedMedia.created_at) }}</span>
+                    </div>
+
+                    <!-- STATUT DE PUBLICATION DÉTAILLÉ -->
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Statut général</span>
+                        <span class="detail-value">
+                            @if (selectedMedia.is_published) {
+                            <span class="badge-published">Publié</span> } @else if (selectedMedia.is_scheduled) {
+                        <span class="badge-scheduled">Programmé</span> } @else if (selectedMedia.is_failed) {
+                        <span class="badge-failed">Échoué</span> } @else if (selectedMedia.is_pending) {
+                        <span class="badge-pending">En attente</span> }
+                        </span>
+                    </div>
+
+                    <!-- PUBLICATION SUR TIKTOK -->
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="bi bi-tiktok" style="color: #000;"></i> TikTok
+                        </span>
+                        <span class="detail-value">
+                            @if (selectedMedia.published_to_tiktok) {
+                            <span class="badge-published">
+                                <i class="bi bi-check-circle-fill"></i> Publié
+                                @if (selectedMedia.publication_results?.tiktok?.post_url) {
+                                <a [href]="selectedMedia.publication_results?.tiktok?.post_url" target="_blank"
+                                    class="post-link">
+                                    <i class="bi bi-box-arrow-up-right"></i> Voir
+                                </a>
+                                }
+                            </span> } @else {
+                        <span class="badge-pending">
+                                <i class="bi bi-clock"></i> Non publié
+                            </span> }
+                        </span>
+                    </div>
+
+                    <!-- PUBLICATION SUR INSTAGRAM -->
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="bi bi-instagram" style="color: #E4405F;"></i> Instagram
+                        </span>
+                        <span class="detail-value">
+                            @if (selectedMedia.published_to_instagram) {
+                            <span class="badge-published">
+                                <i class="bi bi-check-circle-fill"></i> Publié
+                                @if (selectedMedia.publication_results?.instagram?.post_url) {
+                                <a [href]="selectedMedia.publication_results?.instagram?.post_url" target="_blank"
+                                    class="post-link">
+                                    <i class="bi bi-box-arrow-up-right"></i> Voir
+                                </a>
+                                }
+                            </span> } @else {
+                        <span class="badge-pending">
+                                <i class="bi bi-clock"></i> Non publié
+                            </span> }
+                        </span>
+                    </div>
+
+                    <!-- DATE DE PUBLICATION -->
+                    @if (selectedMedia.published_at) {
+                    <div class="detail-item">
+                        <span class="detail-label">
+                            <i class="bi bi-calendar-check"></i> Publié le
+                        </span>
+                        <span class="detail-value">{{ getFormattedDate(selectedMedia.published_at) }}</span>
+                    </div>
+                    }
+
+                    <!-- DÉTAILS DES PUBLICATIONS (si disponibles) -->
+                    @if (selectedMedia.publication_results) {
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Détails des publications</span>
+                        <div class="detail-value publication-details">
+                            @if (selectedMedia.publication_results.tiktok) {
+                            <div class="pub-detail">
+                                <i class="bi bi-tiktok"></i>
+                                <span>TikTok: {{ selectedMedia.publication_results.tiktok.post_id || 'ID inconnu'
+                                    }}</span> @if (selectedMedia.publication_results.tiktok.published_at) {
+                                <span class="pub-date">le {{
+                                    getFormattedDate(selectedMedia.publication_results.tiktok.published_at) }}</span> }
+                            </div>
+                            } @if (selectedMedia.publication_results.instagram) {
+                            <div class="pub-detail">
+                                <i class="bi bi-instagram"></i>
+                                <span>Instagram: {{ selectedMedia.publication_results.instagram.post_id || 'ID inconnu'
+                                    }}</span> @if (selectedMedia.publication_results.instagram.published_at) {
+                                <span class="pub-date">le {{
+                                    getFormattedDate(selectedMedia.publication_results.instagram.published_at) }}</span> }
+                            </div>
+                            } @if (!selectedMedia.publication_results.tiktok && !selectedMedia.publication_results.instagram) {
+                            <span class="text-muted">Aucun détail de publication disponible</span> }
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Actions spécifiques pour les médias programmés -->
+            @if (selectedMedia.is_scheduled) {
+            <div class="scheduled-actions">
+                <div class="scheduled-info">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Ce média est programmé pour une publication future.</span>
+                </div>
+                <div class="scheduled-buttons">
+                    <button class="btn-edit-schedule" (click)="openEditScheduleModal()">
+                        <i class="bi bi-pencil"></i> Modifier la date
+                    </button>
+                    <button class="btn-cancel-schedule" (click)="cancelScheduledTaskFromModal()">
+                        <i class="bi bi-x-circle"></i> Annuler la programmation
+                    </button>
+                </div>
+            </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeMediaModal()">Fermer</button>
+            <button class="btn-share" (click)="openShareModal(selectedMedia, $event); closeMediaModal()">
+                <i class="bi bi-share"></i> Partager
+            </button>
+            <button class="btn-download" (click)="downloadMedia(selectedMedia, $event)">
+                <i class="bi bi-download"></i> Télécharger
+            </button>
+            <button class="btn-delete" (click)="openDeleteModal(selectedMedia, $event); closeMediaModal()">
+                <i class="bi bi-trash"></i> Supprimer
+            </button>
+        </div>
+        }
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL MODIFICATION DE PROGRAMMATION
+     ============================================================ -->
+<div class="modal-overlay" [class.show]="showEditScheduleModal" (click)="closeEditScheduleModal()">
+    <div class="modal-container modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-calendar-check"></i> Modifier la programmation
+            </h3>
+            <button class="modal-close" (click)="closeEditScheduleModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="bi bi-calendar"></i> Nouvelle date et heure de publication
+                </label>
+                <input type="datetime-local" class="form-control schedule-input" [(ngModel)]="editScheduleDateTime" [min]="minScheduleDate"> @if (editScheduleDateTime) {
+                <div class="form-hint">
+                    <i class="bi bi-info-circle"></i> Publication prévue le : <strong>{{ editScheduleDateTime |
+                        date:'dd/MM/yyyy à HH:mm' }}</strong>
+                </div>
+                }
+            </div>
+            @if (editScheduleError) {
+            <div class="form-error">
+                <i class="bi bi-exclamation-triangle-fill"></i> {{ editScheduleError }}
+            </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeEditScheduleModal()">Annuler</button>
+            <button class="btn-schedule-confirm" (click)="updateSchedule()" [disabled]="!editScheduleDateTime || isUpdatingSchedule">
+                @if (isUpdatingSchedule) {
+                <i class="bi bi-arrow-repeat spin"></i> Modification...
+                } @else {
+                <i class="bi bi-check-lg"></i> Modifier
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL UPLOAD
+     ============================================================ -->
+<div class="modal-overlay" [class.show]="showUploadModal" (click)="closeUploadModal()">
+    <div class="modal-container modal-md" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-cloud-upload"></i> Uploader des médias
+            </h3>
+            <button class="modal-close" (click)="closeUploadModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="upload-zone" (dragover)="$event.preventDefault()" (drop)="$event.preventDefault()">
+                <input type="file" #fileInput multiple accept="image/*,video/*" (change)="onFileSelected($event)" class="hidden">
+                <i class="bi bi-cloud-arrow-up"></i>
+                <p>Glissez-déposez vos fichiers ici ou</p>
+                <button class="btn-browse" (click)="fileInput.click()">Parcourir</button>
+                <span class="upload-hint">Images (PNG, JPG, GIF) et Vidéos (MP4, MOV)</span>
+            </div>
+
+            @if (selectedFiles.length > 0) {
+            <div class="file-list">
+                <h4>Fichiers sélectionnés ({{ selectedFiles.length }})</h4>
+                @for (file of selectedFiles; track $index) {
+                <div class="file-item">
+                    <i class="bi" [class.bi-file-image]="file.type.startsWith('image/')" [class.bi-file-play]="file.type.startsWith('video/')"></i>
+                    <span class="file-name">{{ file.name }}</span>
+                    <span class="file-size">{{ getFileSize(file.size) }}</span>
+                    <button class="btn-remove-file" (click)="removeFile($index)">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                }
+            </div>
+
+            @if (isUploadingFile) {
+            <div class="upload-progress">
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar" [style.width.%]="uploadProgress"></div>
+                </div>
+                <span class="progress-text">{{ uploadProgress }}%</span>
+            </div>
+            } }
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeUploadModal()">Annuler</button>
+            <button class="btn-upload-confirm" (click)="uploadFiles()" [disabled]="selectedFiles.length === 0 || isUploadingFile">
+                @if (isUploadingFile) {
+                <i class="bi bi-arrow-repeat spin"></i> Upload en cours...
+                } @else {
+                <i class="bi bi-cloud-upload"></i> Uploader {{ selectedFiles.length }} fichier(s)
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL PARTAGE SOCIAL
+     ============================================================ -->
+<div class="modal-overlay" [class.show]="showShareModal" (click)="closeShareModal()">
+    <div class="modal-container modal-md" (click)="$event.stopPropagation()">
+        @if (mediaToShare) {
+        <div class="modal-header">
+            <h3 class="modal-title">
+                <i class="bi bi-share"></i> Partager sur les réseaux sociaux
+            </h3>
+            <button class="modal-close" (click)="closeShareModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <!-- Aperçu du média -->
+            <div class="share-preview">
+                @if (getMediaType(mediaToShare) === 'image') {
+                <img [src]="mediaToShare.url" [alt]="mediaToShare.file_name" class="share-thumbnail"> } @else {
+                <video [src]="mediaToShare.url" muted class="share-thumbnail"></video> }
+            </div>
+
+            <!-- Informations du média -->
+            <div class="media-info-bar">
+                <div class="info-item">
+                    <i class="bi bi-file-earmark"></i>
+                    <span>{{ mediaToShare.file_name }}</span>
+                </div>
+                <div class="info-item">
+                    <i class="bi bi-arrows-angle-expand"></i>
+                    <span>{{ mediaToShare.width || '?' }} × {{ mediaToShare.height || '?' }}</span>
+                </div>
+                @if (mediaToShare.duration_seconds) {
+                <div class="info-item">
+                    <i class="bi bi-clock"></i>
+                    <span>{{ mediaToShare.duration_seconds }}s</span>
+                </div>
+                }
+                <div class="info-item">
+                    <i class="bi bi-tag"></i>
+                    <span>{{ getMediaTypeLabel(mediaToShare) }}</span>
+                </div>
+            </div>
+
+            <!-- STATUT DE PUBLICATION -->
+            <div class="share-publication-status">
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="bi bi-tiktok" style="color: #000;"></i> TikTok
+                    </span>
+                    <span class="detail-value">
+                        @if (mediaToShare.published_to_tiktok) {
+                        <span class="badge-published">
+                            <i class="bi bi-check-circle-fill"></i> Publié
+                            @if (mediaToShare.publication_results?.tiktok?.post_url) {
+                            <a [href]="mediaToShare.publication_results?.tiktok?.post_url" target="_blank"
+                                class="post-link">
+                                <i class="bi bi-box-arrow-up-right"></i> Voir
+                            </a>
+                            }
+                        </span> } @else {
+                    <span class="badge-pending">
+                            <i class="bi bi-clock"></i> Non publié
+                        </span> }
+                    </span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">
+                        <i class="bi bi-instagram" style="color: #E4405F;"></i> Instagram
+                    </span>
+                    <span class="detail-value">
+                        @if (mediaToShare.published_to_instagram) {
+                        <span class="badge-published">
+                            <i class="bi bi-check-circle-fill"></i> Publié
+                            @if (mediaToShare.publication_results?.instagram?.post_url) {
+                            <a [href]="mediaToShare.publication_results?.instagram?.post_url" target="_blank"
+                                class="post-link">
+                                <i class="bi bi-box-arrow-up-right"></i> Voir
+                            </a>
+                            }
+                        </span> } @else {
+                    <span class="badge-pending">
+                            <i class="bi bi-clock"></i> Non publié
+                        </span> }
+                    </span>
+                </div>
+            </div>
+
+            <!-- Sélection de la plateforme -->
+            <div class="form-group">
+                <label class="form-label">Choisir une plateforme <span class="required">*</span></label>
+                <div class="platform-buttons">
+                    <button class="platform-btn" [class.active]="sharePlatform === 'tiktok'" (click)="onPlatformChange('tiktok')">
+                        <i class="bi bi-tiktok"></i> TikTok
+                    </button>
+                    <button class="platform-btn" [class.active]="sharePlatform === 'instagram'" (click)="onPlatformChange('instagram')">
+                        <i class="bi bi-instagram"></i> Instagram
+                    </button>
+                </div>
+            </div>
+
+            <!-- ALERTE DE COMPATIBILITE INSTAGRAM (seulement pour format non compatible) -->
+            @if (sharePlatform === 'instagram' && compatibilityMessage && !isAlreadyPublishedOnPlatform('instagram')) {
+            <div class="compatibility-alert">
+                <div class="alert-icon">
+                    <i class="bi bi-exclamation-octagon-fill"></i>
+                </div>
+                <div class="alert-content">
+                    <div class="alert-title">Format non compatible avec Instagram</div>
+                    <div class="alert-message">{{ compatibilityMessage }}</div>
+                    <div class="alert-details" *ngIf="mediaToShare">
+                        {{ getCompatibilityDetails(mediaToShare, 'instagram') }}
+                    </div>
+                </div>
+            </div>
+            }
+
+            <!-- ALERTE DEJA PUBLIE (info simple) -->
+            @if (sharePlatform === 'instagram' && isAlreadyPublishedOnPlatform('instagram')) {
+            <div class="info-alert">
+                <i class="bi bi-info-circle-fill"></i> Ce média est déjà publié sur Instagram. Vous pouvez publier à nouveau.
+            </div>
+            } @if (sharePlatform === 'tiktok' && isAlreadyPublishedOnPlatform('tiktok')) {
+            <div class="info-alert">
+                <i class="bi bi-info-circle-fill"></i> Ce média est déjà publié sur TikTok. Vous pouvez publier à nouveau.
+            </div>
+            }
+
+            <!-- ALERTE DE COMPATIBILITE (VERTE) -->
+            @if (sharePlatform === 'instagram' && !compatibilityMessage && mediaToShare && !isAlreadyPublishedOnPlatform('instagram')) {
+            <div class="compatibility-success">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>Ce média est compatible avec Instagram</span>
+            </div>
+            }
+
+            <!-- Legende -->
+            <div class="form-group">
+                <label class="form-label">Legende</label>
+                <textarea class="form-control" [(ngModel)]="shareCaption" rows="3" placeholder="Ajoutez une legende pour votre publication..."></textarea>
+                <div class="char-counter">{{ shareCaption.length }} / 2200</div>
+            </div>
+
+            <!-- Option programmation -->
+            <div class="form-group schedule-toggle">
+                <label class="checkbox-label">
+                    <input type="checkbox" [(ngModel)]="showScheduleShare">
+                    <span class="checkbox-text">
+                        <i class="bi bi-calendar-plus"></i>
+                        Programmer la publication
+                    </span>
+                </label>
+            </div>
+
+            <!-- Section programmation -->
+            @if (showScheduleShare) {
+            <div class="schedule-section animate-slide">
+                <div class="schedule-info">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Choisissez la date et l'heure de publication</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-calendar-event"></i> Date et heure de publication
+                    </label>
+                    <input type="datetime-local" class="form-control schedule-input" [(ngModel)]="scheduleDateTime" [min]="minScheduleDate">
+                    <div class="form-hint" *ngIf="scheduleDateTime">
+                        <i class="bi bi-info-circle"></i> Publication prevue le <strong>{{ scheduleDateTime |
+                            date:'dd/MM/yyyy à HH:mm' }}</strong>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+        <div class="modal-footer">
+            @if (errorMessage) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+            </div>
+            } @if (successMessage) {
+            <div class="success-state">
+                <i class="bi bi-check-circle-fill"></i>
+                <p>{{ successMessage }}</p>
+            </div>
+            }
+            <button class="btn-secondary" (click)="closeShareModal()">Annuler</button> @if (showScheduleShare) {
+            <button class="btn-schedule-confirm" (click)="schedulePublication()" [disabled]="!sharePlatform || !scheduleDateTime || isPublishing">
+                @if (isPublishing) {
+                <i class="bi bi-arrow-repeat spin"></i> Programmation...
+                } @else {
+                <i class="bi bi-calendar-check"></i> Programmer
+                }
+            </button> } @else {
+            <button class="btn-publish-social" (click)="publishToSocial()" [disabled]="!sharePlatform || isPublishing || (sharePlatform === 'instagram' && !isCompatible && !isAlreadyPublishedOnPlatform('instagram'))">
+                @if (isPublishing) {
+                <i class="bi bi-arrow-repeat spin"></i> Publication...
+                } @else {
+                <i class="bi bi-send"></i> Publier maintenant
+                }
+            </button> }
+        </div>
+        }
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL CONFIRMATION ANNULATION PROGRAMMATION
+     ============================================================ -->
+<div class="modal-overlay" [class.show]="showCancelConfirmationModal" (click)="closeCancelConfirmation()">
+    <div class="modal-container modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title text-danger">
+                <i class="bi bi-exclamation-triangle-fill"></i> Annuler la programmation
+            </h3>
+            <button class="modal-close" (click)="closeCancelConfirmation()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="confirm-body">
+                <div class="confirm-icon">
+                    <i class="bi bi-calendar-x" style="font-size: 3rem; color: #f59e0b;"></i>
+                </div>
+                <p class="confirm-message">
+                    Êtes-vous sûr de vouloir annuler cette programmation ?
+                </p>
+                <div class="confirm-details" *ngIf="selectedMedia">
+                    <div class="confirm-item">
+                        <span class="confirm-label">Média</span>
+                        <span class="confirm-value">{{ selectedMedia.file_name }}</span>
+                    </div>
+                    <div class="confirm-item">
+                        <span class="confirm-label">Plateforme</span>
+                        <span class="confirm-value">
+                            @if (selectedMedia.is_scheduled) {
+                            <span class="badge-scheduled">Programmé</span> }
+                        </span>
+                    </div>
+                </div>
+                <p class="confirm-warning">
+                    <i class="bi bi-exclamation-circle"></i> Cette action est irréversible. La publication ne sera pas effectuée.
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeCancelConfirmation()">Annuler</button>
+            <button class="btn-delete" (click)="confirmCancelSchedule()" [disabled]="isCancelling">
+                @if (isCancelling) {
+                <i class="bi bi-arrow-repeat spin"></i> Annulation...
+                } @else {
+                <i class="bi bi-x-circle"></i> Confirmer l'annulation
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL SUPPRESSION
+     ============================================================ -->
+<div class="modal-overlay" [class.show]="showDeleteModal" (click)="closeDeleteModal()">
+    <div class="modal-container modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title text-danger">
+                <i class="bi bi-exclamation-triangle-fill"></i> Supprimer le média
+            </h3>
+            <button class="modal-close" (click)="closeDeleteModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            @if (mediaToDelete) {
+            <div class="delete-confirm">
+                <div class="delete-icon">
+                    <i class="bi bi-trash3-fill"></i>
+                </div>
+                <p class="delete-message">
+                    Êtes-vous sûr de vouloir supprimer ce média ?
+                </p>
+                <div class="delete-preview">
+                    @if (getMediaType(mediaToDelete) === 'image') {
+                    <img [src]="mediaToDelete.url" [alt]="mediaToDelete.file_name" class="delete-thumbnail"> } @else {
+                    <video [src]="mediaToDelete.url" muted class="delete-thumbnail"></video> }
+                    <div class="delete-info">
+                        <span class="delete-name">{{ mediaToDelete.file_name }}</span>
+                        <span class="delete-type">{{ getMediaTypeLabel(mediaToDelete) }}</span>
+                    </div>
+                </div>
+                <p class="delete-warning">
+                    <i class="bi bi-exclamation-circle"></i> Cette action est irréversible.
+                </p>
+            </div>
+            }
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeDeleteModal()">Annuler</button>
+            <button class="btn-delete" (click)="confirmDelete()" [disabled]="isDeleting">
+                @if (isDeleting) {
+                <i class="bi bi-arrow-repeat spin"></i> Suppression...
+                } @else {
+                <i class="bi bi-trash"></i> Supprimer définitivement
+                }
+            </button>
+        </div>
+    </div>
+</div>

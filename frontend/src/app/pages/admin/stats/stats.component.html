@@ -1,0 +1,247 @@
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <app-sidebar [(collapsed)]="sidebarCollapsed" [class.mobile-open]="mobileSidebarOpen">
+    </app-sidebar>
+
+    <!-- Overlay mobile -->
+    <div class="mobile-overlay" [class.visible]="mobileSidebarOpen" (click)="toggleSidebar()">
+    </div>
+
+    <!-- Main -->
+    <div class="main-area" [class.sidebar-collapsed]="sidebarCollapsed">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="mobile-menu-btn" (click)="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="topbar-title">
+                    <h1 class="page-title">Statistiques</h1>
+                    <span class="page-breadcrumb">Voici un aperçu global de votre plateforme</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="refresh-btn" (click)="refreshData()" [disabled]="isLoading">
+                    <i class="bi bi-arrow-repeat" [class.spin]="isLoading"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="dashboard-content">
+
+            <!-- Loading State -->
+            @if (isLoading) {
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <p>Chargement des statistiques...</p>
+            </div>
+            }
+
+            <!-- Error State -->
+            @if (errorMessage && !isLoading) {
+            <div class="error-state">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                <p>{{ errorMessage }}</p>
+                <button class="btn-retry" (click)="refreshData()">Réessayer</button>
+            </div>
+            }
+
+            <!-- Data Display -->
+            @if (!isLoading && !errorMessage && stats) {
+
+            <!-- Cartes récapitulatives (en haut) -->
+            <div class="stats-summary-grid animate-in">
+                <div class="summary-card">
+                    <div class="summary-icon">
+                        <i class="bi bi-person-badge"></i>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-value">{{ stats.total_managers }}</div>
+                        <div class="summary-label">Managers</div>
+                        <div class="summary-sub">{{ stats.active_managers }} actifs, {{ stats.inactive_managers }} inactifs</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">
+                        <i class="bi bi-newspaper"></i>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-value">{{ stats.total_articles }}</div>
+                        <div class="summary-label">Articles</div>
+                        <div class="summary-sub">{{ stats.articles_publies }} publiés, {{ stats.articles_programmes }} programmés</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">
+                        <i class="bi bi-globe"></i>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-value">{{ stats.total_sites }}</div>
+                        <div class="summary-label">Sites analysés</div>
+                        <div class="summary-sub">Sites enregistrés sur la plateforme</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cartes de statistiques principales -->
+            <div class="stats-main-grid animate-in" style="--delay:0.1s">
+                <!-- Carte Utilisateurs -->
+                <div class="stats-main-card users-card">
+                    <div class="stats-card-header">
+                        <div class="stats-card-icon">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <h3 class="stats-card-title">Utilisateurs</h3>
+                    </div>
+                    <div class="stats-card-body">
+                        <div class="stats-number">{{ stats.total_users }}</div>
+                        <div class="stats-detail">
+                            <span class="stats-detail-item">
+                                <i class="bi bi-person-check-fill text-success"></i>
+                                Managers: {{ stats.total_managers }}
+                            </span>
+                            <span class="stats-detail-item">
+                                <i class="bi bi-shield-lock-fill text-primary"></i>
+                                Admins: {{ stats.total_users - stats.total_managers }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="stats-card-footer">
+                        <div class="progress-bar">
+                            <div class="progress-fill" [style.width.%]="getManagerActivityRate()"></div>
+                        </div>
+                        <span class="stats-progress-label">{{ getManagerActivityRate() }}% actifs</span>
+                    </div>
+                </div>
+
+                <!-- Carte Articles -->
+                <div class="stats-main-card articles-card">
+                    <div class="stats-card-header">
+                        <div class="stats-card-icon">
+                            <i class="bi bi-file-text-fill"></i>
+                        </div>
+                        <h3 class="stats-card-title">Articles</h3>
+                    </div>
+                    <div class="stats-card-body">
+                        <div class="stats-number">{{ stats.total_articles }}</div>
+                        <div class="stats-detail">
+                            <span class="stats-detail-item text-published">
+                                <i class="bi bi-check-circle-fill"></i>
+                                Publiés: {{ stats.articles_publies }}
+                            </span>
+                            <span class="stats-detail-item text-scheduled">
+                                <i class="bi bi-calendar-check-fill"></i>
+                                Programmés: {{ stats.articles_programmes }}
+                            </span>
+                            <span class="stats-detail-item text-draft">
+                                <i class="bi bi-pencil-fill"></i>
+                                Brouillons: {{ stats.articles_brouillon }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="stats-card-footer">
+                        <div class="progress-bar">
+                            <div class="progress-fill published" [style.width.%]="getArticleCompletionRate()"></div>
+                        </div>
+                        <span class="stats-progress-label">{{ getArticleCompletionRate() }}% publiés</span>
+                    </div>
+                </div>
+
+                <!-- Carte Sites -->
+                <div class="stats-main-card sites-card">
+                    <div class="stats-card-header">
+                        <div class="stats-card-icon">
+                            <i class="bi bi-globe2"></i>
+                        </div>
+                        <h3 class="stats-card-title">Sites analysés</h3>
+                    </div>
+                    <div class="stats-card-body">
+                        <div class="stats-number">{{ stats.total_sites }}</div>
+                        <div class="stats-detail">
+                            <span class="stats-detail-item">
+                                <i class="bi bi-check-lg text-success"></i>
+                                Sites enregistrés
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Graphiques et détails -->
+            <div class="stats-detail-grid animate-in" style="--delay:0.2s">
+                <!-- Répartition des articles -->
+                <div class="stats-chart-card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-pie-chart-fill"></i> Répartition des articles
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <div class="donut-chart">
+                            <div class="donut-ring">
+                                <div class="donut-segment published" [style.--percent]="(stats.articles_publies / stats.total_articles) * 100"></div>
+                                <div class="donut-segment scheduled" [style.--percent]="(stats.articles_programmes / stats.total_articles) * 100"></div>
+                                <div class="donut-segment draft" [style.--percent]="(stats.articles_brouillon / stats.total_articles) * 100"></div>
+                            </div>
+                        </div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-color published"></span>
+                                <span class="legend-label">Publiés</span>
+                                <span class="legend-value">{{ stats.articles_publies }}</span>
+                                <span class="legend-percent">{{ (stats.articles_publies / stats.total_articles * 100).toFixed(1) }}%</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color scheduled"></span>
+                                <span class="legend-label">Programmés</span>
+                                <span class="legend-value">{{ stats.articles_programmes }}</span>
+                                <span class="legend-percent">{{ (stats.articles_programmes / stats.total_articles * 100).toFixed(1) }}%</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color draft"></span>
+                                <span class="legend-label">Brouillons</span>
+                                <span class="legend-value">{{ stats.articles_brouillon }}</span>
+                                <span class="legend-percent">{{ (stats.articles_brouillon / stats.total_articles * 100).toFixed(1) }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activité des managers -->
+                <div class="stats-chart-card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="bi bi-graph-up"></i> Activité des managers
+                        </h3>
+                    </div>
+                    <div class="activity-stats">
+                        <div class="activity-stat-item">
+                            <div class="activity-stat-header">
+                                <span class="activity-stat-label">Actifs</span>
+                                <span class="activity-stat-number">{{ stats.active_managers }}</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill success" [style.width.%]="(stats.active_managers / stats.total_managers) * 100"></div>
+                            </div>
+                        </div>
+                        <div class="activity-stat-item">
+                            <div class="activity-stat-header">
+                                <span class="activity-stat-label">Inactifs</span>
+                                <span class="activity-stat-number">{{ stats.inactive_managers }}</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill warning" [style.width.%]="(stats.inactive_managers / stats.total_managers) * 100"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            }
+
+        </main>
+    </div>
+</div>

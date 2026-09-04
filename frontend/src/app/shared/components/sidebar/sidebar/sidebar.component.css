@@ -1,0 +1,607 @@
+/* ============================================================
+   Variables
+   ============================================================ */
+
+:host {
+    --primary: #28b188;
+    --primary-dark: #1e8a6a;
+    --primary-light: #8ece4e;
+    --sidebar-bg: linear-gradient(180deg, #0a1a0a 0%, #0f1f0f 100%);
+    --sidebar-surface: #162416;
+    --sidebar-border: rgba(255, 255, 255, 0.06);
+    --sidebar-text: #b0c4b0;
+    --sidebar-text-dim: #6a7a6a;
+    --sidebar-width: 280px;
+    --sidebar-collapsed: 80px;
+    --white: #ffffff;
+    --font-display: 'Syne', 'Segoe UI', system-ui, sans-serif;
+    --font-body: 'DM Sans', 'Inter', system-ui, sans-serif;
+    display: block;
+    height: 100%;
+}
+
+
+/* ============================================================
+   Sidebar principal
+   ============================================================ */
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    z-index: 1000;
+    border-right: 1px solid var(--sidebar-border);
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed);
+}
+
+
+/* ============================================================
+   Scrollbar personnalisée
+   ============================================================ */
+
+.sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(40, 177, 136, 0.4);
+}
+
+
+/* ============================================================
+   Header avec logos alternatifs
+   ============================================================ */
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 1.25rem;
+    border-bottom: 1px solid var(--sidebar-border);
+    min-height: 76px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    cursor: pointer;
+    text-decoration: none;
+    flex: 1;
+    overflow: hidden;
+}
+
+.logo-full {
+    height: 40px;
+    width: auto;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.logo-full.hidden {
+    display: none;
+}
+
+.logo-icon {
+    height: 36px;
+    width: auto;
+    display: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.logo-icon.visible {
+    display: block;
+}
+
+.sidebar.collapsed .logo-full {
+    display: none;
+}
+
+.sidebar.collapsed .logo-icon {
+    display: block;
+}
+
+.collapse-btn {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--sidebar-border);
+    border-radius: 8px;
+    color: var(--sidebar-text-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.collapse-btn:hover {
+    background: rgba(40, 177, 136, 0.15);
+    color: var(--primary);
+    border-color: rgba(40, 177, 136, 0.3);
+}
+
+
+/* ============================================================
+   Navigation
+   ============================================================ */
+
+.sidebar-nav {
+    flex: 1;
+    padding: 1.25rem 0.75rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.nav-section {
+    margin-bottom: 0.5rem;
+}
+
+.nav-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item {
+    margin-bottom: 0.25rem;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.7rem 0.875rem;
+    border-radius: 10px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    position: relative;
+    white-space: nowrap;
+}
+
+.sidebar.collapsed .nav-link {
+    justify-content: center;
+    padding: 0.7rem;
+}
+
+.nav-link i {
+    font-size: 1.2rem;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--white);
+}
+
+.nav-link.active {
+    background: rgba(40, 177, 136, 0.12);
+    color: var(--primary);
+}
+
+.nav-link.active i {
+    color: var(--primary);
+}
+
+.nav-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-badge {
+    background: var(--primary);
+    color: var(--white);
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 20px;
+    flex-shrink: 0;
+}
+
+
+/* Tooltip pour mode collapsed */
+
+.nav-tooltip {
+    position: fixed;
+    left: calc(var(--sidebar-collapsed) + 12px);
+    background: var(--sidebar-surface);
+    color: var(--white);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: all 0.2s;
+    z-index: 1001;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--sidebar-border);
+}
+
+.nav-link:hover .nav-tooltip {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+
+/* ============================================================
+   Footer avec avatar rond et déconnexion
+   ============================================================ */
+
+.sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid var(--sidebar-border);
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+
+/* User footer - avatar en bas */
+
+.user-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.user-footer:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.user-footer.collapsed {
+    justify-content: center;
+    padding: 0.5rem;
+}
+
+.user-avatar {
+    position: relative;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.avatar-initials {
+    width: 44px;
+    height: 44px;
+    background: var(--primary-dark);
+    border-radius: 50% !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--white);
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(40, 177, 136, 0.3);
+    transition: all 0.2s ease;
+}
+
+.user-footer:hover .avatar-initials {
+    transform: scale(1.02);
+    box-shadow: 0 6px 16px rgba(40, 177, 136, 0.4);
+}
+
+.online-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    background: #4caf50;
+    border: 2px solid var(--sidebar-surface);
+    border-radius: 50%;
+}
+
+.user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+    width: fit-content;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.user-role i {
+    font-size: 0.7rem;
+}
+
+.sidebar:not(.collapsed) .user-role {
+    background: rgba(40, 177, 136, 0.12);
+    color: var(--primary);
+}
+
+
+/* Bouton déconnexion */
+
+.logout-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.7rem 0.875rem;
+    background: rgba(239, 68, 68, 0.08);
+    border: none;
+    border-radius: 10px;
+    color: #f87171;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.sidebar.collapsed .logout-btn {
+    justify-content: center;
+    padding: 0.7rem;
+}
+
+.logout-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ff6b6b;
+}
+
+.logout-btn i {
+    font-size: 1.1rem;
+}
+
+.logout-label {
+    flex: 1;
+    text-align: left;
+}
+
+
+/* ============================================================
+   Overlay mobile
+   ============================================================ */
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.28s ease;
+}
+
+.sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+/* ============================================================
+   Responsive design
+   ============================================================ */
+
+
+/* Tablette et mobile */
+
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        width: var(--sidebar-width) !important;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+    }
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+    .sidebar.collapsed {
+        width: var(--sidebar-width) !important;
+    }
+    .collapse-btn {
+        display: flex;
+    }
+    /* Forcer l'affichage du logo complet sur mobile */
+    .sidebar .logo-full {
+        display: block !important;
+    }
+    .sidebar .logo-icon {
+        display: none !important;
+    }
+    /* Forcer l'affichage des infos utilisateur sur mobile */
+    .sidebar.collapsed .user-info {
+        display: flex !important;
+    }
+    .sidebar.collapsed .nav-label {
+        display: inline !important;
+    }
+    .nav-tooltip {
+        display: none !important;
+    }
+    .user-footer.collapsed {
+        justify-content: flex-start !important;
+    }
+}
+
+
+/* Desktop large */
+
+@media (min-width: 1400px) {
+     :host {
+        --sidebar-width: 300px;
+    }
+}
+
+
+/* Desktop moyen */
+
+@media (min-width: 769px) and (max-width: 1399px) {
+    .sidebar-overlay {
+        display: none;
+    }
+}
+
+
+/* Mode collapsed sur desktop - ajustements spécifiques */
+
+@media (min-width: 769px) {
+    .sidebar.collapsed .user-footer {
+        justify-content: center;
+    }
+    .sidebar.collapsed .user-info {
+        display: none;
+    }
+    .sidebar.collapsed .logout-btn {
+        justify-content: center;
+    }
+    .sidebar.collapsed .logout-label {
+        display: none;
+    }
+}
+
+
+/* Animation d'entrée */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.sidebar:not(.collapsed) .nav-item {
+    animation: fadeIn 0.2s ease forwards;
+}
+
+.sidebar:not(.collapsed) .nav-item:nth-child(1) {
+    animation-delay: 0.01s;
+}
+
+.sidebar:not(.collapsed) .nav-item:nth-child(2) {
+    animation-delay: 0.02s;
+}
+
+.sidebar:not(.collapsed) .nav-item:nth-child(3) {
+    animation-delay: 0.03s;
+}
+
+.sidebar:not(.collapsed) .nav-item:nth-child(4) {
+    animation-delay: 0.04s;
+}
+
+.sidebar:not(.collapsed) .nav-item:nth-child(5) {
+    animation-delay: 0.05s;
+}
+
+.sidebar:not(.collapsed) .nav-item:nth-child(6) {
+    animation-delay: 0.06s;
+}
+
+
+/* ============================================================
+   Scrollbar personnalisée - CACHÉE MAIS FONCTIONNELLE
+   ============================================================ */
+
+.sidebar-nav {
+    flex: 1;
+    padding: 1.25rem 0.75rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Cacher la scrollbar pour Firefox */
+    scrollbar-width: none;
+    /* Cacher la scrollbar pour Chrome, Safari, Edge */
+    -ms-overflow-style: none;
+    /* Internet Explorer */
+}
+
+
+/* Cache la scrollbar pour Chrome, Safari, Edge */
+
+.sidebar-nav::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari, Edge */
+    width: 0;
+    /* Alternative */
+}
+
+
+/* Optionnel : Si vous voulez une scrollbar ultra fine qui apparaît au survol */
+
+.sidebar-nav.scroll-on-hover {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(40, 177, 136, 0.2) transparent;
+}
+
+.sidebar-nav.scroll-on-hover::-webkit-scrollbar {
+    display: block;
+    width: 3px;
+}
+
+.sidebar-nav.scroll-on-hover::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-nav.scroll-on-hover::-webkit-scrollbar-thumb {
+    background: rgba(40, 177, 136, 0.2);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.sidebar-nav.scroll-on-hover:hover::-webkit-scrollbar-thumb {
+    background: rgba(40, 177, 136, 0.5);
+}
