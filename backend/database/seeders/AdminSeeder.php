@@ -11,12 +11,12 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'Abdoul.wakilou-tiga@benin-digital.com'],
+            ['email' => 'votre-email@gmail.com'],
             [
-                'name' => 'Abdoul',
-                'firstname' => 'TIGA',
-                'email' => 'Abdoul.wakilou-tiga@benin-digital.com',
-                'password' => Hash::make('Benin@Digital#2026'),
+                'name' => 'Nom',
+                'firstname' => 'Prénom',
+                'email' => 'votre-email@gmail.com',
+                'password' => Hash::make('MdpFortBeninDigital12345678!'),
                 'role' => 'admin',
                 'email_verified_at' => now(),
             ]
